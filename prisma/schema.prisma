@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  password       String?
+  googleId       String?   @unique
+  name           String?
+  role           Role      @default(USER)
+  level          UserLevel @default(BEGINNER)
+  trainingStreak Int       @default(0)
+  quotasUsed     Int       @default(0)
+  lastQuotaReset DateTime  @default(now())
+
+  // AI Quotas
+  aiPromptCount    Int      @default(0)
+  lastAiPromptDate DateTime @default(now())
+
+  plan         SubscriptionPlan @default(BASIC)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  activityLogs ActivityLog[]
+  routines     Routine[]
+  subscription Subscription?
+  favorites    UserFavorite[]
+}
+
+model Exercise {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  description  String?
+  instructions String[]
+  difficulty   String? // beginner, intermediate, expert
+  mechanic     String? // compound, isolation
+  force        String? // push, pull, static
+  equipment    String?
+
+  // Relations
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  primaryMuscles   Muscle[] @relation("PrimaryMuscles")
+  secondaryMuscles Muscle[] @relation("SecondaryMuscles")
+
+  images   ExerciseImage[]
+  routines RoutineExercise[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  exercises Exercise[]
+}
+
+model Muscle {
+  id                 String     @id @default(uuid())
+  name               String     @unique
+  target             String? // Optional: grouping like 'arms', 'legs'
+  primaryExercises   Exercise[] @relation("PrimaryMuscles")
+  secondaryExercises Exercise[] @relation("SecondaryMuscles")
+}
+
+model ExerciseImage {
+  id         String   @id @default(uuid())
+  url        String
+  exerciseId String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+}
+
+model Routine {
+  id          String            @id @default(uuid())
+  name        String
+  description String?
+  isPublic    Boolean           @default(false)
+  likes       Int               @default(0)
+  creatorId   String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  activities  ActivityLog[]
+  creator     User              @relation(fields: [creatorId], references: [id])
+  exercises   RoutineExercise[]
+  favoritedBy UserFavorite[]
+}
+
+model RoutineExercise {
+  id         String   @id @default(uuid())
+  routineId  String
+  exerciseId String
+  order      Int
+  sets       Int?
+  reps       Int?
+  duration   Int?
+  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+  routine    Routine  @relation(fields: [routineId], references: [id])
+}
+
+model UserFavorite {
+  userId    String
+  routineId String
+  createdAt DateTime @default(now())
+  routine   Routine  @relation(fields: [routineId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@id([userId, routineId])
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String
+  routineId String?
+  date      DateTime @default(now())
+  duration  Int
+  calories  Int
+  routine   Routine? @relation(fields: [routineId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Subscription {
+  id        String           @id @default(uuid())
+  userId    String           @unique
+  plan      SubscriptionPlan
+  startDate DateTime         @default(now())
+  endDate   DateTime?
+  isActive  Boolean          @default(true)
+  user      User             @relation(fields: [userId], references: [id])
+}
+
+enum UserLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum SubscriptionPlan {
+  BASIC
+  PRO
+  EXPERT
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model AiResponseCache {
+  id        String   @id @default(uuid())
+  prompt    String   @unique
+  response  String
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,44 @@
+services:
+  gym-pulse-db:
+    image: postgres:15-alpine
+    container_name: gym-pulse-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-gym-pulse}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  gym-pulse-api:
+    build:
+      context: .
+      target: development
+    container_name: gym-pulse-api
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@gym-pulse-db:5432/${POSTGRES_DB:-gym-pulse}?schema=public
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      PORT: 3000
+      # Enable polling for watch mode if needed (useful for some Windows/Docker setups)
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - gym-pulse-db
+    volumes:
+      - /app/node_modules
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: package.json
+
+volumes:
+  postgres_data:
