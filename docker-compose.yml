@@ -21,6 +21,7 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@gym-pulse-db:5432/${POSTGRES_DB:-gym-pulse}?schema=public
       GEMINI_API_KEY: ${GEMINI_API_KEY}
+      FIREBASE_SERVICE_ACCOUNT: /app/firebase/g-pluse-firebase-adminsdk-fbsvc-e3048d4260.json
       PORT: 3000
       # Enable polling for watch mode if needed (useful for some Windows/Docker setups)
       WATCHPACK_POLLING: "true"
@@ -29,7 +30,9 @@ services:
     depends_on:
       - gym-pulse-db
     volumes:
+      - .:/app
       - /app/node_modules
+      - ./firebase:/app/firebase
     develop:
       watch:
         - action: sync
