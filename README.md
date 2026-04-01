@@ -1,138 +1,204 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# G-Pulse API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend API for G-Pulse, a fitness tracking application built with NestJS, Prisma, and PostgreSQL (Supabase).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tech Stack
 
-## Description
+| Layer | Technology |
+|-------|------------|
+| Framework | [NestJS](https://nestjs.com/) |
+| ORM | [Prisma](https://www.prisma.io/) |
+| Database | PostgreSQL ([Supabase](https://supabase.com/)) |
+| Auth | Firebase JWT |
+| AI | Google Gemini API |
+| Docs | Swagger / OpenAPI |
+| Container | Docker + Docker Compose |
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Prerequisites
 
-## Project setup
+- Node.js 20+
+- npm 9+
+- Docker & Docker Compose (optional, for containerized dev)
 
-1. **Install dependencies**:
+## Project Setup
+
+### 1. Install dependencies
+
 ```bash
-$ npm install
+npm install
 ```
 
+> `prisma generate` runs automatically via the `postinstall` script.
 
-2. **Configure environment variables**:
-Copy `.env.example` to `.env` and fill in the required values (especially `GEMINI_API_KEY` and `FIREBASE_SERVICE_ACCOUNT`).
+### 2. Configure environment variables
+
+Create a `.env` file in the project root with the following variables:
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | Supabase pooler connection string (port `6543`, transaction mode) |
+| `DIRECT_URL` | Supabase session mode connection (port `5432`, for migrations) |
+| `GEMINI_API_KEY` | Google Gemini API key |
+| `FIREBASE_SERVICE_ACCOUNT` | Path to Firebase service account JSON |
+
+> **Supabase connections**: `DATABASE_URL` uses the transaction pooler (`pooler.supabase.com:6543`) for app runtime queries. `DIRECT_URL` uses session mode (`pooler.supabase.com:5432`) for schema operations like migrations. Both are configured in `prisma/schema.prisma` via the `url` and `directUrl` fields.
+
+### 3. Run migrations
+
 ```bash
-cp .env.example .env
+npx prisma migrate dev
 ```
 
-## 🐳 Docker Deployment & Development
+## Running the App
 
-El proyecto está totalmente contenedorizado para facilitar el desarrollo y despliegue.
+### Local
 
-### 1. Desarrollo con Hot Reloading (Recomendado)
-Para desarrollar con sincronización en tiempo real entre tu código local y el contenedor:
 ```bash
+# development (watch mode)
+npm run start:dev
+
+# production
+npm run start:prod
+```
+
+### Docker (API + Local DB)
+
+```bash
+# development with hot reloading
 docker compose watch
-```
-*Este comando sincroniza los cambios en `src`, `package.json` y `prisma` automáticamente sin necesidad de reiniciar todo el entorno.*
 
-### 2. Iniciar el entorno completo (API + DB)
-Si solo deseas levantar los servicios sin el modo watch:
-```bash
+# or just start services
 docker compose up -d --build
 ```
 
-### 3. Ejecutar Migraciones y Generar Cliente
-Puedes gestionar Prisma directamente a través de Docker:
-
-- **Migraciones**: `npm run docker:migrate`
-- **Generar Cliente**: `npm run docker:generate`
-- **Prisma Studio**: `npm run docker:studio`
-
-## 📘 API Documentation (Swagger)
-
-La API cuenta con documentación interactiva integrada. Una vez que el proyecto esté corriendo, puedes acceder en:
-
-**[http://localhost:3000/api/docs](http://localhost:3000/api/docs)**
-
-## Compile and run the project (Local)
-
-Si prefieres correr el proyecto localmente (requiere PostgreSQL corriendo):
+Prisma commands inside the container:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm run docker:migrate    # run migrations
+npm run docker:generate   # generate Prisma client
+npm run docker:studio     # open Prisma Studio
 ```
 
-## Run tests
+## API Modules
+
+| Module | Description |
+|--------|-------------|
+| `auth` | Firebase JWT authentication |
+| `users` | User management and profiles |
+| `exercises` | Exercise catalog with muscles, categories, and images |
+| `routines` | Workout routines with ordered exercises |
+| `progress` | Activity logs and training tracking |
+| `subscriptions` | Subscription plans (Basic, Pro, Expert) |
+| `gemini` | AI-powered features via Google Gemini |
+| `admin` | Admin-only operations |
+
+## Database
+
+### Creating a New Migration
+
+When you modify `prisma/schema.prisma`, follow these steps to create and apply a migration:
+
+**1. Edit the schema**
+
+Make your changes in `prisma/schema.prisma` (add/modify models, fields, relations, enums, etc.).
+
+**2. Generate the migration**
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npx prisma migrate dev --name descriptive_migration_name
 ```
 
-## Deployment
+This will:
+- Compare your schema against the current database state
+- Generate a SQL migration file in `prisma/migrations/<timestamp>_<name>/migration.sql`
+- Apply the migration to your local database
+- Regenerate the Prisma client
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Use a descriptive name in snake_case, e.g.: `add_workout_sets`, `rename_user_level`, `add_index_exercise_name`.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+**3. Verify**
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npx prisma studio   # visually inspect the database
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+**4. Commit the migration**
 
-## Resources
+Always commit both the schema and the generated migration file:
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+git add prisma/schema.prisma prisma/migrations/
+git commit -m "feat(db): add workout sets table"
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+> **Important**: Never manually edit generated migration SQL files unless you know exactly what you're doing. If a migration is wrong, roll it back and create a new one.
 
-## Support
+### Applying Migrations (Production / CI)
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+npx prisma migrate deploy
+```
 
-## Stay in touch
+This applies all pending migrations without generating new ones. Use this in production, CI, and Docker environments.
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Migrations with Supabase (Manual Fallback)
 
-## License
+If `prisma migrate deploy` hangs or can't reach the direct connection, apply migrations manually via `psql`:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+psql "$DATABASE_URL" -f prisma/migrations/<migration_name>/migration.sql
+```
+
+Then register it in Prisma's tracking table:
+
+```sql
+INSERT INTO "_prisma_migrations" ("id", "checksum", "migration_name", "finished_at", "applied_steps_count")
+VALUES (gen_random_uuid()::text, 'manual', '<migration_name>', now(), 1);
+```
+
+### Seeds
+
+```bash
+npm run seed:exercises    # seed exercise catalog
+npm run seed:local        # seed local dev data
+```
+
+## API Documentation (Swagger)
+
+Once running, access interactive docs at:
+
+```
+http://localhost:3000/api/docs
+```
+
+## Tests
+
+```bash
+npm run test          # unit tests
+npm run test:e2e      # e2e tests
+npm run test:cov      # coverage
+```
+
+## Project Structure
+
+```
+src/
+├── admin/              # Admin module
+├── auth/               # Authentication (Firebase JWT)
+├── exercises/          # Exercise catalog
+├── exercise-images/    # Exercise image management
+├── gemini/             # AI integration
+├── prisma/             # Prisma service (DB access)
+├── progress/           # Activity logs
+├── routines/           # Workout routines
+├── subscriptions/      # Subscription plans
+├── users/              # User management
+├── app.module.ts       # Root module
+└── main.ts             # Entry point
+
+prisma/
+├── schema.prisma       # Database schema (single source of truth)
+├── migrations/         # Generated SQL migrations
+├── seed-exercises.ts   # Exercise seed script
+└── seed-local.ts       # Local dev seed script
+```
