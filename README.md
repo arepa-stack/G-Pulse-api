@@ -39,7 +39,8 @@ Create a `.env` file in the project root with the following variables:
 | `DATABASE_URL` | Supabase pooler connection string (port `6543`, transaction mode) |
 | `DIRECT_URL` | Supabase session mode connection (port `5432`, for migrations) |
 | `GEMINI_API_KEY` | Google Gemini API key |
-| `FIREBASE_SERVICE_ACCOUNT` | Path to Firebase service account JSON |
+| `FIREBASE_SERVICE_ACCOUNT` | Path to Firebase service account JSON (local dev) |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | Firebase service account JSON content as string (production) |
 
 > **Supabase connections**: `DATABASE_URL` uses the transaction pooler (`pooler.supabase.com:6543`) for app runtime queries. `DIRECT_URL` uses session mode (`pooler.supabase.com:5432`) for schema operations like migrations. Both are configured in `prisma/schema.prisma` via the `url` and `directUrl` fields.
 
