@@ -8,17 +8,20 @@ export class FirebaseAdminService implements OnModuleInit {
 
     onModuleInit() {
         if (admin.apps.length === 0) {
-            // For development, we might use service account or just project ID if running in GCP
-            // Typically, for local dev, we use a serviceAccountKey.json
+            const serviceAccountJson = this.configService.get<string>('FIREBASE_SERVICE_ACCOUNT_JSON');
             const serviceAccountPath = this.configService.get<string>('FIREBASE_SERVICE_ACCOUNT');
 
-            if (serviceAccountPath) {
+            if (serviceAccountJson) {
+                const serviceAccount = JSON.parse(serviceAccountJson);
+                admin.initializeApp({
+                    credential: admin.credential.cert(serviceAccount),
+                });
+            } else if (serviceAccountPath) {
                 admin.initializeApp({
                     credential: admin.credential.cert(serviceAccountPath),
                 });
             } else {
-                // Fallback or warning
-                console.warn('FIREBASE_SERVICE_ACCOUNT not found, firebase-admin initialized with default credentials');
+                console.warn('No Firebase credentials found, initialized with default credentials');
                 admin.initializeApp();
             }
         }
