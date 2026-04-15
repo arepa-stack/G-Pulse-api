@@ -19,15 +19,15 @@ export class RolesGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
-    const firebaseUser = request.user;
+    const authUser = request.user;
 
-    if (!firebaseUser || !firebaseUser.uid) {
+    if (!authUser || !authUser.id) {
       throw new ForbiddenException('User not authenticated');
     }
 
     // Validate role from database
     const user = await this.prisma.user.findUnique({
-      where: { googleId: firebaseUser.uid },
+      where: { id: authUser.id },
       select: { role: true }
     });
 

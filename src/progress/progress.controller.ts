@@ -6,7 +6,7 @@ import { LogActivityDto } from './dto/log-activity.dto';
 
 @ApiTags('progress')
 @ApiBearerAuth()
-@UseGuards(AuthGuard('firebase-jwt'))
+@UseGuards(AuthGuard('jwt'))
 @Controller('progress')
 export class ProgressController {
     constructor(private progressService: ProgressService) { }
@@ -14,12 +14,12 @@ export class ProgressController {
     @Post('log')
     @ApiOperation({ summary: 'Log a completed workout activity' })
     async logActivity(@Request() req, @Body() logData: LogActivityDto) {
-        return this.progressService.logActivity(req.user.uid, logData);
+        return this.progressService.logActivity(req.user.id, logData);
     }
 
     @Get('history')
     @ApiOperation({ summary: 'Get workout activity history' })
     async getHistory(@Request() req) {
-        return this.progressService.getHistory(req.user.uid);
+        return this.progressService.getHistory(req.user.id);
     }
 }

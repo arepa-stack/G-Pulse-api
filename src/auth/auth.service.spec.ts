@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { FirebaseAdminService } from './firebase-admin.service';
@@ -16,6 +17,7 @@ describe('AuthService', () => {
             findOne: jest.fn(),
             create: jest.fn(),
             update: jest.fn(),
+            updateByEmail: jest.fn(),
           },
         },
         {
@@ -24,7 +26,14 @@ describe('AuthService', () => {
             getAuth: jest.fn().mockReturnValue({
               createUser: jest.fn(),
               generatePasswordResetLink: jest.fn(),
+              verifyIdToken: jest.fn(),
             }),
+          },
+        },
+        {
+          provide: JwtService,
+          useValue: {
+            sign: jest.fn().mockReturnValue('test-jwt'),
           },
         },
       ],

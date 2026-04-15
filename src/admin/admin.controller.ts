@@ -11,7 +11,7 @@ import { UpdateExerciseDto } from './dto/update-exercise.dto';
 @ApiTags('admin')
 @ApiBearerAuth()
 @Controller('admin')
-@UseGuards(AuthGuard('firebase-jwt'), RolesGuard)
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles(Role.ADMIN)
 export class AdminController {
     constructor(private readonly adminService: AdminService) { }

@@ -37,9 +37,9 @@ describe('UsersController', () => {
     });
 
     describe('updateProfile', () => {
-        it('should call usersService.update with Google ID from request and update data', async () => {
+        it('should call usersService.update with user id from request and update data', async () => {
             const mockReq = {
-                user: { uid: 'google-oauth2-12345' },
+                user: { id: 'user-uuid-1' },
             };
 
             const updateData: any = {
@@ -48,7 +48,7 @@ describe('UsersController', () => {
             };
 
             const mockResponse = {
-                id: 'user-id-1',
+                id: 'user-uuid-1',
                 googleId: 'google-oauth2-12345',
                 name: 'New Name',
                 level: 'INTERMEDIATE',
@@ -58,24 +58,33 @@ describe('UsersController', () => {
 
             const result = await controller.updateProfile(mockReq, updateData);
 
-            expect(service.update).toHaveBeenCalledWith('google-oauth2-12345', updateData);
+            expect(service.update).toHaveBeenCalledWith('user-uuid-1', updateData);
             expect(result).toEqual(mockResponse);
         });
     });
 
     describe('getProfile', () => {
-        it('should return user profile if found', async () => {
-            const mockReq = { user: { uid: '123' } };
-            const mockUser = { id: 'user1', googleId: '123' };
+        it('should return user profile if found (without password)', async () => {
+            const mockReq = { user: { id: 'user-uuid-1' } };
+            const mockUser = {
+                id: 'user-uuid-1',
+                googleId: '123',
+                password: 'hashed',
+                email: 'a@b.com',
+            } as any;
             mockUsersService.findOne.mockResolvedValue(mockUser);
 
             const result = await controller.getProfile(mockReq);
-            expect(service.findOne).toHaveBeenCalledWith({ googleId: '123' });
-            expect(result).toEqual(mockUser);
+            expect(service.findOne).toHaveBeenCalledWith({ id: 'user-uuid-1' });
+            expect(result).toEqual({
+                id: 'user-uuid-1',
+                googleId: '123',
+                email: 'a@b.com',
+            });
         });
 
         it('should throw NotFoundException if user does not exist', async () => {
-            const mockReq = { user: { uid: '123' } };
+            const mockReq = { user: { id: 'user-uuid-1' } };
             mockUsersService.findOne.mockResolvedValue(null);
 
             await expect(controller.getProfile(mockReq)).rejects.toThrow(NotFoundException);

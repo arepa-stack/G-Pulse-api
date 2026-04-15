@@ -18,9 +18,9 @@ export class UsersService {
         });
     }
 
-    async update(googleId: string, data: Partial<Prisma.UserUpdateInput>) {
+    async update(id: string, data: Partial<Prisma.UserUpdateInput>) {
         return this.prisma.user.update({
-            where: { googleId },
+            where: { id },
             data,
         });
     }
@@ -32,9 +32,9 @@ export class UsersService {
         });
     }
 
-    async getStats(googleId: string) {
+    async getStats(id: string) {
         const user = await this.prisma.user.findUnique({
-            where: { googleId },
+            where: { id },
             include: {
                 _count: {
                     select: {

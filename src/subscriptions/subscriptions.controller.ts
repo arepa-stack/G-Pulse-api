@@ -6,7 +6,7 @@ import { UpgradeSubscriptionDto } from './dto/upgrade-subscription.dto';
 
 @ApiTags('subscriptions')
 @ApiBearerAuth()
-@UseGuards(AuthGuard('firebase-jwt'))
+@UseGuards(AuthGuard('jwt'))
 @Controller('subscriptions')
 export class SubscriptionsController {
     constructor(private subscriptionsService: SubscriptionsService) { }
@@ -14,6 +14,6 @@ export class SubscriptionsController {
     @Post('upgrade')
     @ApiOperation({ summary: 'Upgrade user subscription plan' })
     async upgrade(@Request() req, @Body() upgradeData: UpgradeSubscriptionDto) {
-        return this.subscriptionsService.createSubscription(req.user.uid, upgradeData.plan);
+        return this.subscriptionsService.createSubscription(req.user.id, upgradeData.plan);
     }
 }
