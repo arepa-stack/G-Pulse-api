@@ -1,5 +1,6 @@
-import { Controller, Post, Body } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Controller, Post, Get, Body, UseGuards, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -33,6 +34,18 @@ export class AuthController {
   })
   async google(@Body() body: GoogleLoginDto) {
     return this.authService.googleLogin(body.idToken);
+  }
+
+  @Get('session')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Check if current session token is still valid',
+    description:
+      'Returns authenticated:true and user data if the Bearer JWT is valid and the user still exists. Returns 401 otherwise. Intended for splash screen use.',
+  })
+  async session(@Request() req) {
+    return this.authService.getSession(req.user.id);
   }
 
   @Post('forgot-password')

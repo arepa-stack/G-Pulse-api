@@ -113,6 +113,14 @@ export class AuthService {
     return user;
   }
 
+  async getSession(userId: string) {
+    const user = await this.usersService.findOne({ id: userId });
+    if (!user) {
+      throw new UnauthorizedException('Session no longer valid');
+    }
+    return { authenticated: true, user: this.toPublicUser(user) };
+  }
+
   async forgotPassword(email: string) {
     try {
       const link = await this.firebaseAdmin
