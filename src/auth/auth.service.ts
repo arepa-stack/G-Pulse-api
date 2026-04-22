@@ -9,6 +9,7 @@ import { DecodedIdToken } from 'firebase-admin/auth';
 import { User } from '@prisma/client';
 import { UsersService } from '../users/users.service';
 import { FirebaseAdminService } from './firebase-admin.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -18,10 +19,12 @@ export class AuthService {
     private usersService: UsersService,
     private firebaseAdmin: FirebaseAdminService,
     private jwtService: JwtService,
+    private mailService: MailService,
   ) {}
 
   private toPublicUser(user: User): Omit<User, 'password'> {
-    const { password: _password, ...rest } = user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...rest } = user;
     return rest;
   }
 
@@ -47,9 +50,13 @@ export class AuthService {
         password: hashedPassword,
       });
 
+      await this.mailService.sendWelcome(user.email, user.name ?? name);
+
       return this.toPublicUser(user);
-    } catch (error: any) {
-      throw new BadRequestException(error.message ?? 'Registration failed');
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error ? error.message : 'Registration failed';
+      throw new BadRequestException(msg);
     }
   }
 
@@ -82,7 +89,7 @@ export class AuthService {
       throw new UnauthorizedException('Token has no email claim');
     }
 
-    const name = decoded.name || 'User';
+    const name = (decoded.name as string | undefined) || 'User';
     const user = await this.findOrCreateUser(email, decoded.uid, name);
     const token = this.signAccessToken(user);
 
@@ -126,12 +133,53 @@ export class AuthService {
       const link = await this.firebaseAdmin
         .getAuth()
         .generatePasswordResetLink(email);
-      console.log(`Password reset link for ${email}: ${link}`);
+
+      const user = await this.usersService.findOne({ email });
+      await this.mailService.sendPasswordReset(
+        email,
+        user?.name ?? 'Usuario',
+        link,
+      );
+
       return {
         message: 'If the email exists, a reset link has been generated.',
       };
-    } catch (error: any) {
-      throw new BadRequestException(error.message ?? 'Request failed');
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Request failed';
+      throw new BadRequestException(msg);
     }
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const user = await this.usersService.findOne({ id: userId });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    if (!user.password) {
+      throw new BadRequestException(
+        'This account uses social login and does not have a password',
+      );
+    }
+
+    const passwordOk = await bcrypt.compare(currentPassword, user.password);
+    if (!passwordOk) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    const hashedNew = await bcrypt.hash(newPassword, this.bcryptRounds);
+    await this.usersService.update(userId, { password: hashedNew });
+
+    await this.mailService.sendPasswordChanged(
+      user.email,
+      user.name ?? 'Usuario',
+    );
+
+    return { message: 'Password updated successfully' };
   }
 }

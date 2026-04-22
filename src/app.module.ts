@@ -14,6 +14,7 @@ import { ProgressModule } from './progress/progress.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { ExerciseImagesModule } from './exercise-images/exercise-images.module';
 import { AdminModule } from './admin/admin.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { AdminModule } from './admin/admin.module';
     SubscriptionsModule,
     ExerciseImagesModule,
     AdminModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
