@@ -12,9 +12,9 @@ describe('ExercisesService', () => {
         {
           provide: PrismaService,
           useValue: {
-            exercise: { findMany: jest.fn(), findUnique: jest.fn() }
-          }
-        }
+            exercise: { findMany: jest.fn(), findUnique: jest.fn() },
+          },
+        },
       ],
     }).compile();
 

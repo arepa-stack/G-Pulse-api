@@ -66,7 +66,9 @@ export class MailService {
       });
 
       if (error) {
-        this.logger.error(`Failed to send email to ${options.to}: ${error.message}`);
+        this.logger.error(
+          `Failed to send email to ${options.to}: ${error.message}`,
+        );
       } else {
         this.logger.log(`Email sent to ${options.to}: "${options.subject}"`);
       }

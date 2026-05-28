@@ -52,7 +52,8 @@ export class AuthService {
 
       await this.mailService.sendWelcome(user.email, user.name ?? name);
 
-      return this.toPublicUser(user);
+      const token = this.signAccessToken(user);
+      return { token, user: this.toPublicUser(user) };
     } catch (error: unknown) {
       const msg =
         error instanceof Error ? error.message : 'Registration failed';

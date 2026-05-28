@@ -13,9 +13,9 @@ describe('SubscriptionsService', () => {
           provide: PrismaService,
           useValue: {
             user: { update: jest.fn() },
-            subscription: { upsert: jest.fn() }
-          }
-        }
+            subscription: { upsert: jest.fn() },
+          },
+        },
       ],
     }).compile();
 

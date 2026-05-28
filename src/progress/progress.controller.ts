@@ -1,4 +1,11 @@
-import { Controller, Post, Get, Body, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { ProgressService } from './progress.service';
@@ -9,17 +16,17 @@ import { LogActivityDto } from './dto/log-activity.dto';
 @UseGuards(AuthGuard('jwt'))
 @Controller('progress')
 export class ProgressController {
-    constructor(private progressService: ProgressService) { }
+  constructor(private progressService: ProgressService) {}
 
-    @Post('log')
-    @ApiOperation({ summary: 'Log a completed workout activity' })
-    async logActivity(@Request() req, @Body() logData: LogActivityDto) {
-        return this.progressService.logActivity(req.user.id, logData);
-    }
+  @Post('log')
+  @ApiOperation({ summary: 'Log a completed workout activity' })
+  async logActivity(@Request() req, @Body() logData: LogActivityDto) {
+    return this.progressService.logActivity(req.user.id, logData);
+  }
 
-    @Get('history')
-    @ApiOperation({ summary: 'Get workout activity history' })
-    async getHistory(@Request() req) {
-        return this.progressService.getHistory(req.user.id);
-    }
+  @Get('history')
+  @ApiOperation({ summary: 'Get workout activity history' })
+  async getHistory(@Request() req) {
+    return this.progressService.getHistory(req.user.id);
+  }
 }

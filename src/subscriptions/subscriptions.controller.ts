@@ -9,11 +9,14 @@ import { UpgradeSubscriptionDto } from './dto/upgrade-subscription.dto';
 @UseGuards(AuthGuard('jwt'))
 @Controller('subscriptions')
 export class SubscriptionsController {
-    constructor(private subscriptionsService: SubscriptionsService) { }
+  constructor(private subscriptionsService: SubscriptionsService) {}
 
-    @Post('upgrade')
-    @ApiOperation({ summary: 'Upgrade user subscription plan' })
-    async upgrade(@Request() req, @Body() upgradeData: UpgradeSubscriptionDto) {
-        return this.subscriptionsService.createSubscription(req.user.id, upgradeData.plan);
-    }
+  @Post('upgrade')
+  @ApiOperation({ summary: 'Upgrade user subscription plan' })
+  async upgrade(@Request() req, @Body() upgradeData: UpgradeSubscriptionDto) {
+    return this.subscriptionsService.createSubscription(
+      req.user.id,
+      upgradeData.plan,
+    );
+  }
 }
