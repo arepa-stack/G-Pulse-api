@@ -12,9 +12,9 @@ describe('UsersService', () => {
         {
           provide: PrismaService,
           useValue: {
-            user: { findUnique: jest.fn(), update: jest.fn() }
-          }
-        }
+            user: { findUnique: jest.fn(), update: jest.fn() },
+          },
+        },
       ],
     }).compile();
 

@@ -12,10 +12,14 @@ describe('ProgressService', () => {
         {
           provide: PrismaService,
           useValue: {
-            activityLog: { create: jest.fn(), findFirst: jest.fn(), findMany: jest.fn() },
-            user: { findUnique: jest.fn(), update: jest.fn() }
-          }
-        }
+            activityLog: {
+              create: jest.fn(),
+              findFirst: jest.fn(),
+              findMany: jest.fn(),
+            },
+            user: { findUnique: jest.fn(), update: jest.fn() },
+          },
+        },
       ],
     }).compile();
 

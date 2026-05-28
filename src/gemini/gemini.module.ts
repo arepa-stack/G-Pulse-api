@@ -7,6 +7,6 @@ import { PrismaModule } from '../prisma/prisma.module';
   imports: [PrismaModule],
   controllers: [GeminiController],
   providers: [GeminiService],
-  exports: [GeminiService]
+  exports: [GeminiService],
 })
-export class GeminiModule { }
+export class GeminiModule {}

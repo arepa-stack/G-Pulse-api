@@ -19,7 +19,10 @@ import { FirebaseAdminService } from './firebase-admin.service';
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET', 'change-me-in-production'),
         signOptions: {
-          expiresIn: config.get<string>('JWT_EXPIRES_IN', '7d') as SignOptions['expiresIn'],
+          expiresIn: config.get<string>(
+            'JWT_EXPIRES_IN',
+            '7d',
+          ) as SignOptions['expiresIn'],
         },
       }),
     }),

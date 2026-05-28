@@ -8,6 +8,6 @@ import { GeminiModule } from '../gemini/gemini.module';
   imports: [PrismaModule, GeminiModule],
   providers: [RoutinesService],
   controllers: [RoutinesController],
-  exports: [RoutinesService]
+  exports: [RoutinesService],
 })
-export class RoutinesModule { }
+export class RoutinesModule {}
