@@ -1,0 +1,40 @@
+name: Deploy Beta
+
+on:
+  push:
+    branches:
+      - beta
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-beta
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to Beta
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.BETA_SSH_HOST }}
+          username: ${{ secrets.BETA_SSH_USER }}
+          key: ${{ secrets.BETA_SSH_KEY }}
+          port: ${{ secrets.BETA_SSH_PORT || '22' }}
+          script_stop: true
+          script: |
+            set -e
+            cd /orgs/gymapp/g-pulse/backend-api
+            git fetch origin
+            git checkout beta
+            git pull origin beta
+            docker rm -f gym-pulse-api || true
+            docker build -t gym-pulse-api .
+            docker run -d \
+              --name gym-pulse-api \
+              --restart unless-stopped \
+              --env-file ./.env \
+              -p 127.0.0.1:3000:9000 \
+              gym-pulse-api
