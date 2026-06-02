@@ -50,8 +50,9 @@ model Exercise {
   primaryMuscles   Muscle[] @relation("PrimaryMuscles")
   secondaryMuscles Muscle[] @relation("SecondaryMuscles")
 
-  images   ExerciseImage[]
-  routines RoutineExercise[]
+  images      ExerciseImage[]
+  routines    RoutineExercise[]
+  workoutSets WorkoutSet[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -124,6 +125,7 @@ model ActivityLog {
   calories  Int
   routine   Routine? @relation(fields: [routineId], references: [id], onDelete: SetNull)
   user      User     @relation(fields: [userId], references: [id])
+  sets      WorkoutSet[]
 }
 
 model Subscription {
@@ -158,4 +160,16 @@ model AiResponseCache {
   prompt    String   @unique
   response  String
   createdAt DateTime @default(now())
+}
+
+model WorkoutSet {
+  id            String      @id @default(uuid())
+  activityLogId String
+  exerciseId    String
+  setNumber     Int
+  reps          Int
+  weight        Float?      // Opcional para peso corporal
+  activityLog   ActivityLog @relation(fields: [activityLogId], references: [id], onDelete: Cascade)
+  exercise      Exercise    @relation(fields: [exerciseId], references: [id])
+  createdAt     DateTime    @default(now())
 }

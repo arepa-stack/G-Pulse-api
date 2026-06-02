@@ -1,20 +1,33 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { LogActivityDto } from './dto/log-activity.dto';
 
 @Injectable()
 export class ProgressService {
   constructor(private prisma: PrismaService) {}
 
-  async logActivity(
-    userId: string,
-    data: Omit<Prisma.ActivityLogCreateInput, 'user'>,
-  ) {
-    // Correct type usage for create
+  async logActivity(userId: string, data: LogActivityDto) {
+    const { sets, routineId, ...activityData } = data;
+
     const log = await this.prisma.activityLog.create({
       data: {
-        ...data,
+        ...activityData,
         user: { connect: { id: userId } },
+        routine: routineId ? { connect: { id: routineId } } : undefined,
+        sets:
+          sets && sets.length > 0
+            ? {
+                create: sets.map((set) => ({
+                  exerciseId: set.exerciseId,
+                  setNumber: set.setNumber,
+                  reps: set.reps,
+                  weight: set.weight,
+                })),
+              }
+            : undefined,
+      },
+      include: {
+        sets: true,
       },
     });
 
@@ -67,7 +80,85 @@ export class ProgressService {
         routine: {
           select: { name: true },
         },
+        sets: {
+          include: {
+            exercise: {
+              select: { name: true },
+            },
+          },
+          orderBy: { setNumber: 'asc' },
+        },
       },
     });
   }
+
+  async getPersonalRecords(userId: string) {
+    const sets = await this.prisma.workoutSet.findMany({
+      where: {
+        activityLog: {
+          userId,
+        },
+        weight: {
+          not: null,
+        },
+      },
+      include: {
+        exercise: {
+          select: {
+            name: true,
+          },
+        },
+        activityLog: {
+          select: {
+            date: true,
+          },
+        },
+      },
+    });
+
+    const prsMap = new Map<string, typeof sets[0]>();
+    for (const set of sets) {
+      const existing = prsMap.get(set.exerciseId);
+      if (!existing || (set.weight || 0) > (existing.weight || 0)) {
+        prsMap.set(set.exerciseId, set);
+      }
+    }
+
+    return Array.from(prsMap.values()).map((pr) => ({
+      exerciseId: pr.exerciseId,
+      exerciseName: pr.exercise.name,
+      weight: pr.weight,
+      reps: pr.reps,
+      date: pr.activityLog.date,
+    }));
+  }
+
+  async getExerciseHistory(userId: string, exerciseId: string) {
+    return this.prisma.workoutSet.findMany({
+      where: {
+        exerciseId,
+        activityLog: {
+          userId,
+        },
+      },
+      include: {
+        activityLog: {
+          select: {
+            date: true,
+          },
+        },
+      },
+      orderBy: [
+        {
+          activityLog: {
+            date: 'desc',
+          },
+        },
+        {
+          setNumber: 'asc',
+        },
+      ],
+    });
+  }
 }
+

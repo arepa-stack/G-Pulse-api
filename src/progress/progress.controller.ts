@@ -5,6 +5,7 @@ import {
   Body,
   UseGuards,
   Request,
+  Param,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -29,4 +30,17 @@ export class ProgressController {
   async getHistory(@Request() req) {
     return this.progressService.getHistory(req.user.id);
   }
+
+  @Get('prs')
+  @ApiOperation({ summary: 'Get personal records (PRs) per exercise' })
+  async getPersonalRecords(@Request() req) {
+    return this.progressService.getPersonalRecords(req.user.id);
+  }
+
+  @Get('exercise/:id')
+  @ApiOperation({ summary: 'Get history of a specific exercise' })
+  async getExerciseHistory(@Request() req, @Param('id') id: string) {
+    return this.progressService.getExerciseHistory(req.user.id, id);
+  }
 }
+

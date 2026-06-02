@@ -2,6 +2,45 @@
 
 Backend API for G-Pulse, a fitness tracking application built with NestJS, Prisma, and PostgreSQL (Supabase).
 
+## 🚀 Quick Get Started (for Dummies / Guía Rápida)
+
+Choose one of the two super simple ways to get this API up and running on your machine:
+
+### Option A: The Easy Way (NPM / Node.js) - No Docker needed! 💻
+
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+2. **Setup your environment variables**:
+   Duplicate the `.env.example` file, rename it to `.env` and fill in your connection strings.
+3. **Synchronize the Database**:
+   ```bash
+   npx prisma migrate dev
+   ```
+4. **Start the API in development mode**:
+   ```bash
+   npm run start:dev
+   ```
+   *Your API is now running at `http://localhost:3000`! You can visit the interactive documentation at `http://localhost:3000/api/docs`.*
+
+---
+
+### Option B: The Isolated Way (Docker) - No Node.js setup needed! 🐳
+
+1. **Setup your environment variables**:
+   Duplicate the `.env.example` file, rename it to `.env` and fill in your connection strings.
+2. **Build and start the container**:
+   ```bash
+   docker compose up -d --build
+   ```
+3. **Run database migrations inside the container**:
+   ```bash
+   npm run docker:migrate
+   ```
+   *That's it! Your container is running and compiling the API in the background. Access it at `http://localhost:3000/api/docs`.*
+
+
 ## Tech Stack
 
 | Layer | Technology |

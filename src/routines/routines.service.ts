@@ -118,6 +118,47 @@ export class RoutinesService {
     };
   }
 
+  async getPublicRoutines(q: FindAllRoutinesDto) {
+    const take = q.limit ? parseInt(q.limit) : 20;
+    const skip = q.page ? (parseInt(q.page) - 1) * take : 0;
+
+    const where: Prisma.RoutineWhereInput = {
+      isPublic: true,
+      ...(q.search && {
+        name: { contains: q.search, mode: 'insensitive' },
+      }),
+    };
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.routine.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { likes: 'desc' },
+        include: {
+          creator: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          _count: { select: { exercises: true } },
+        },
+      }),
+      this.prisma.routine.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page: q.page ? +q.page : 1,
+        limit: take,
+        totalPages: Math.ceil(total / take),
+      },
+    };
+  }
+
   async findOneForUser(userId: string, id: string) {
     const routine = await this.prisma.routine.findUnique({
       where: { id },
