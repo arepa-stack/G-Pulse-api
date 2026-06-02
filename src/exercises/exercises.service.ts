@@ -25,7 +25,7 @@ export class ExercisesService {
       where,
       orderBy,
       include: {
-        images: true,
+        media: true,
         primaryMuscles: true,
         secondaryMuscles: true,
         category: true,
@@ -36,7 +36,7 @@ export class ExercisesService {
   async findOne(id: string) {
     return this.prisma.exercise.findUnique({
       where: { id },
-      include: { images: true },
+      include: { media: true },
     });
   }
 }

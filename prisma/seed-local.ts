@@ -1,28 +1,39 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, MediaType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 const GITHUB_BASE_URL =
-  'https://raw.githubusercontent.com/leip1493/g-pulse-exercise-db/refs/heads/main/exercises/';
+  'https://raw.githubusercontent.com/arepa-stack/exercises-dataset/main/';
 const EXERCISES_JSON_URL =
-  'https://raw.githubusercontent.com/leip1493/g-pulse-exercise-db/refs/heads/main/dist/exercises.json';
+  'https://raw.githubusercontent.com/arepa-stack/exercises-dataset/main/data/exercises.json';
 
-interface ExternalExercise {
-  id: string; // "3_4_Sit-Up"
+interface NewExternalExercise {
+  id: string;
   name: string;
-  force: string | null;
-  level: string;
-  mechanic: string | null;
-  equipment: string | null;
-  primaryMuscles: string[];
-  secondaryMuscles: string[];
-  instructions: string[];
   category: string;
-  images: string[];
+  body_part: string;
+  equipment: string;
+  instructions: {
+    en?: string;
+    es?: string;
+    it?: string;
+    tr?: string;
+  };
+  instruction_steps: {
+    en?: string[];
+    es?: string[];
+    it?: string[];
+    tr?: string[];
+  };
+  muscle_group: string;
+  secondary_muscles: string[];
+  target: string;
+  image: string;
+  gif_url: string;
 }
 
 async function main() {
-  console.log('Starting Seed...');
+  console.log('Starting Seed for the new dataset structure (ES)...');
   console.log(`Fetching exercises from GitHub...`);
 
   const response = await fetch(EXERCISES_JSON_URL);
@@ -33,8 +44,7 @@ async function main() {
     process.exit(1);
   }
 
-  const exercises: ExternalExercise[] =
-    (await response.json()) as ExternalExercise[];
+  const exercises: NewExternalExercise[] = (await response.json()) as NewExternalExercise[];
   console.log(`Found ${exercises.length} exercises.`);
 
   let createdCount = 0;
@@ -49,14 +59,17 @@ async function main() {
     });
 
     // 2. Upsert Muscles
+    const primaryMusclesArray = [ex.target];
+    const secondaryMusclesArray = ex.secondary_muscles || [];
+    
     const allMuscles = [
-      ...new Set([...ex.primaryMuscles, ...ex.secondaryMuscles]),
+      ...new Set([...primaryMusclesArray, ...secondaryMusclesArray]),
     ];
     if (allMuscles.length === 0) allMuscles.push('general');
 
-    // Create map of muscle name -> Muscle Record
     const muscleRecords: Record<string, any> = {};
     for (const mName of allMuscles) {
+      if (!mName) continue;
       const m = await prisma.muscle.upsert({
         where: { name: mName },
         update: {},
@@ -65,27 +78,25 @@ async function main() {
       muscleRecords[mName] = m;
     }
 
-    // 3. Create Exercise
-    // Convert array instructions to string if schema requires string, or keep array if string[]
-    // Schema: instructions String[]
-
-    // Handle images
-    const imageRecords: { url: string }[] = [];
-    for (const imgPath of ex.images) {
-      imageRecords.push({
-        url: `${GITHUB_BASE_URL}${imgPath.replace(/\\/g, '/')}`,
-      });
+    // 3. Handle images and GIFs as ExerciseMedia
+    const mediaRecords: { url: string; type: MediaType }[] = [];
+    if (ex.image) {
+      mediaRecords.push({ url: `${GITHUB_BASE_URL}${ex.image}`, type: 'IMAGE' });
     }
+    if (ex.gif_url) {
+      mediaRecords.push({ url: `${GITHUB_BASE_URL}${ex.gif_url}`, type: 'GIF' });
+    }
+
+    // Use Spanish if available, fallback to English
+    const instructionSteps = ex.instruction_steps?.es || ex.instruction_steps?.en || [];
+    const descriptionText = ex.instructions?.es || ex.instructions?.en || `Exercise: ${ex.name}`;
 
     const exerciseData = {
       name: ex.name,
-      difficulty: ex.level,
-      mechanic: ex.mechanic,
-      force: ex.force,
       equipment: ex.equipment,
-      instructions: ex.instructions,
+      instructions: instructionSteps,
       categoryId: category.id,
-      description: `Exercise: ${ex.name}`,
+      description: descriptionText,
     };
 
     try {
@@ -95,32 +106,31 @@ async function main() {
           ...exerciseData,
           primaryMuscles: {
             set: [], // Clear existing
-            connect: ex.primaryMuscles.map((m) => ({
+            connect: primaryMusclesArray.filter(Boolean).map((m) => ({
               id: muscleRecords[m].id,
             })),
           },
           secondaryMuscles: {
             set: [],
-            connect: ex.secondaryMuscles.map((m) => ({
+            connect: secondaryMusclesArray.filter(Boolean).map((m) => ({
               id: muscleRecords[m].id,
             })),
           },
-          // We won't update images to avoid duplication or complex logic for now
         },
         create: {
           ...exerciseData,
           primaryMuscles: {
-            connect: ex.primaryMuscles.map((m) => ({
+            connect: primaryMusclesArray.filter(Boolean).map((m) => ({
               id: muscleRecords[m].id,
             })),
           },
           secondaryMuscles: {
-            connect: ex.secondaryMuscles.map((m) => ({
+            connect: secondaryMusclesArray.filter(Boolean).map((m) => ({
               id: muscleRecords[m].id,
             })),
           },
-          images: {
-            create: imageRecords,
+          media: {
+            create: mediaRecords,
           },
         },
       });

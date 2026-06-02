@@ -155,7 +155,7 @@ export class GeminiService {
               ],
             },
             take: 5,
-            include: { images: true },
+            include: { media: true },
           });
 
           if (exercises.length > 0) {

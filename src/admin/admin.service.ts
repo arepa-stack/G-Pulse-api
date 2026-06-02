@@ -112,14 +112,14 @@ export class AdminService {
     return this.prisma.exercise.create({
       data: {
         ...(exerciseData as any),
-        images:
+        media:
           imageUrls && imageUrls.length > 0
             ? {
                 create: imageUrls.map((url) => ({ url })),
               }
             : undefined,
       },
-      include: { images: true },
+      include: { media: true },
     });
   }
 
@@ -139,14 +139,14 @@ export class AdminService {
       where: { id },
       data: {
         ...(exerciseData as any),
-        images:
+        media:
           imageUrls && imageUrls.length > 0
             ? {
                 create: imageUrls.map((url) => ({ url })),
               }
             : undefined,
       },
-      include: { images: true },
+      include: { media: true },
     });
   }
 

@@ -164,7 +164,7 @@ export class RoutinesService {
       where: { id },
       include: {
         exercises: {
-          include: { exercise: { include: { images: true } } },
+          include: { exercise: { include: { media: true } } },
           orderBy: { order: 'asc' },
         },
       },

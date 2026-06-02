@@ -50,7 +50,7 @@ model Exercise {
   primaryMuscles   Muscle[] @relation("PrimaryMuscles")
   secondaryMuscles Muscle[] @relation("SecondaryMuscles")
 
-  images      ExerciseImage[]
+  media       ExerciseMedia[]
   routines    RoutineExercise[]
   workoutSets WorkoutSet[]
 
@@ -72,11 +72,18 @@ model Muscle {
   secondaryExercises Exercise[] @relation("SecondaryMuscles")
 }
 
-model ExerciseImage {
-  id         String   @id @default(uuid())
+model ExerciseMedia {
+  id         String    @id @default(uuid())
   url        String
+  type       MediaType @default(IMAGE)
   exerciseId String
-  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  exercise   Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+}
+
+enum MediaType {
+  IMAGE
+  GIF
+  VIDEO
 }
 
 model Routine {
