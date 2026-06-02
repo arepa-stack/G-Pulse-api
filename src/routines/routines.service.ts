@@ -70,7 +70,7 @@ export class RoutinesService {
           order: i + 1,
           sets: exData.sets || 3,
           reps: exData.reps || 10,
-          duration: exData.duration,
+          duration: exData.duration && !isNaN(Number(exData.duration)) ? Number(exData.duration) : null,
         },
       });
     }
@@ -206,7 +206,7 @@ export class RoutinesService {
               order: i + 1,
               sets: ex.sets ?? 3,
               reps: ex.reps ?? 10,
-              duration: ex.duration ? +ex.duration : null,
+              duration: ex.duration && !isNaN(Number(ex.duration)) ? Number(ex.duration) : null,
             },
           });
         }
