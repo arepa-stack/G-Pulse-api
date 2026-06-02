@@ -132,7 +132,7 @@ export class AdminService {
     const { imageUrls, ...exerciseData } = data;
 
     if (imageUrls !== undefined) {
-      await this.prisma.exerciseImage.deleteMany({ where: { exerciseId: id } });
+      await this.prisma.exerciseMedia.deleteMany({ where: { exerciseId: id } });
     }
 
     return this.prisma.exercise.update({
@@ -158,7 +158,7 @@ export class AdminService {
 
     await this.prisma.$transaction([
       this.prisma.routineExercise.deleteMany({ where: { exerciseId: id } }),
-      this.prisma.exerciseImage.deleteMany({ where: { exerciseId: id } }),
+      this.prisma.exerciseMedia.deleteMany({ where: { exerciseId: id } }),
       this.prisma.exercise.delete({ where: { id } }),
     ]);
 

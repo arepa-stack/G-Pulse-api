@@ -8,7 +8,7 @@ const LOCAL_PREFIX = '/exercises/';
 async function main() {
   console.log('Starting image URL migration to GitHub CDN...');
 
-  const images = await prisma.exerciseImage.findMany();
+  const images = await prisma.exerciseMedia.findMany();
   console.log(`Found ${images.length} ExerciseImage records.`);
 
   let updatedCount = 0;
@@ -23,7 +23,7 @@ async function main() {
     if (image.url.startsWith(LOCAL_PREFIX)) {
       const relativePath = image.url.slice(LOCAL_PREFIX.length);
       const newUrl = `${GITHUB_BASE_URL}${relativePath}`;
-      await prisma.exerciseImage.update({
+      await prisma.exerciseMedia.update({
         where: { id: image.id },
         data: { url: newUrl },
       });

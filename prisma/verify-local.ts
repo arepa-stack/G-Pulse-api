@@ -7,7 +7,7 @@ async function main() {
   console.log(`Total Exercises: ${count}`);
 
   const withImages = await prisma.exercise.count({
-    where: { images: { some: {} } },
+    where: { media: { some: {} } },
   });
   console.log(`Exercises with Images: ${withImages}`);
 
@@ -38,7 +38,7 @@ async function main() {
       ],
     },
     take: 10,
-    include: { images: true },
+    include: { media: true },
   });
 
   console.log(`Found ${chestBeginner.length} Beginner Chest exercises.`);
