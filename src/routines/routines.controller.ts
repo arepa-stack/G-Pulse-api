@@ -53,6 +53,12 @@ export class RoutinesController {
     return this.routinesService.findAllForUser(req.user.id, query);
   }
 
+  @Get('public')
+  @ApiOperation({ summary: 'List all public routines' })
+  async findPublic(@Query() query: FindAllRoutinesDto) {
+    return this.routinesService.getPublicRoutines(query);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a single routine by id' })
   async findOne(@Request() req: AuthRequest, @Param('id') id: string) {

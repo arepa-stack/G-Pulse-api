@@ -1,5 +1,28 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, IsArray, ValidateNested } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+
+export class WorkoutSetDto {
+  @ApiProperty({ description: 'ID of the exercise performed' })
+  @IsNotEmpty()
+  @IsString()
+  exerciseId: string;
+
+  @ApiProperty({ description: 'Set number' })
+  @IsNotEmpty()
+  @IsNumber()
+  setNumber: number;
+
+  @ApiProperty({ description: 'Number of repetitions' })
+  @IsNotEmpty()
+  @IsNumber()
+  reps: number;
+
+  @ApiProperty({ description: 'Weight lifted in kg (optional)', required: false })
+  @IsOptional()
+  @IsNumber()
+  weight?: number;
+}
 
 export class LogActivityDto {
   @ApiProperty({ description: 'ID of the routine performed', required: false })
@@ -16,4 +39,12 @@ export class LogActivityDto {
   @IsNotEmpty()
   @IsNumber()
   calories: number;
+
+  @ApiProperty({ description: 'Workout sets performed', type: [WorkoutSetDto], required: false })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => WorkoutSetDto)
+  sets?: WorkoutSetDto[];
 }
+
