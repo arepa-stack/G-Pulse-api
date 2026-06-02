@@ -18,7 +18,11 @@ Choose one of the two super simple ways to get this API up and running on your m
    ```bash
    npx prisma migrate dev
    ```
-4. **Start the API in development mode**:
+4. **Generate Prisma Client (TypeScript Types)**:
+   ```bash
+   npx prisma generate
+   ```
+5. **Start the API in development mode**:
    ```bash
    npm run start:dev
    ```
