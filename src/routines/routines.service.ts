@@ -263,7 +263,9 @@ export class RoutinesService {
     ]);
   }
 
-  async like(userId: string, routineId: string) {
+  // Centraliza la validación de "rutina pública existente". Reutilizable por
+  // acciones sociales sobre rutinas públicas (likes, favoritos, etc.).
+  private async getPublicRoutineOrThrow(routineId: string) {
     const routine = await this.prisma.routine.findUnique({
       where: { id: routineId },
       select: { isPublic: true },
@@ -275,6 +277,12 @@ export class RoutinesService {
     if (!routine.isPublic) {
       throw new ForbiddenException('Only public routines can be liked');
     }
+
+    return routine;
+  }
+
+  async like(userId: string, routineId: string) {
+    await this.getPublicRoutineOrThrow(routineId);
 
     await this.prisma.$transaction(async (tx) => {
       // createMany + skipDuplicates devuelve count === 1 solo si la fila es
