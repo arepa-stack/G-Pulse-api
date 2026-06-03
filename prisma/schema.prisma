@@ -31,6 +31,7 @@ model User {
   routines     Routine[]
   subscription Subscription?
   favorites    UserFavorite[]
+  routineLikes RoutineLike[]
 }
 
 model Exercise {
@@ -99,6 +100,7 @@ model Routine {
   creator     User              @relation(fields: [creatorId], references: [id])
   exercises   RoutineExercise[]
   favoritedBy UserFavorite[]
+  likedBy     RoutineLike[]
 }
 
 model RoutineExercise {
@@ -121,6 +123,18 @@ model UserFavorite {
   user      User     @relation(fields: [userId], references: [id])
 
   @@id([userId, routineId])
+}
+
+model RoutineLike {
+  userId    String
+  routineId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  routine Routine @relation(fields: [routineId], references: [id], onDelete: Cascade)
+
+  @@id([userId, routineId])
+  @@index([routineId])
 }
 
 model ActivityLog {

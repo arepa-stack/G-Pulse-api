@@ -3,6 +3,7 @@ import {
   HttpException,
   HttpStatus,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -260,5 +261,64 @@ export class RoutinesService {
       this.prisma.userFavorite.deleteMany({ where: { routineId: id } }),
       this.prisma.routine.delete({ where: { id } }),
     ]);
+  }
+
+  // Centraliza la validación de "rutina pública existente". Reutilizable por
+  // acciones sociales sobre rutinas públicas (likes, favoritos, etc.).
+  private async getPublicRoutineOrThrow(routineId: string) {
+    const routine = await this.prisma.routine.findUnique({
+      where: { id: routineId },
+      select: { isPublic: true },
+    });
+
+    if (!routine) {
+      throw new NotFoundException('Routine not found');
+    }
+    if (!routine.isPublic) {
+      throw new ForbiddenException('Only public routines can be liked');
+    }
+
+    return routine;
+  }
+
+  async like(userId: string, routineId: string) {
+    await this.getPublicRoutineOrThrow(routineId);
+
+    await this.prisma.$transaction(async (tx) => {
+      // createMany + skipDuplicates devuelve count === 1 solo si la fila es
+      // nueva. Así el contador desnormalizado se incrementa una única vez por
+      // usuario (idempotente). Un upsert no permitiría distinguir insert de update.
+      const inserted = await tx.routineLike.createMany({
+        data: [{ userId, routineId }],
+        skipDuplicates: true,
+      });
+
+      if (inserted.count === 1) {
+        await tx.routine.update({
+          where: { id: routineId },
+          data: { likes: { increment: 1 } },
+        });
+      }
+    });
+  }
+
+  async unlike(userId: string, routineId: string) {
+    await this.prisma.$transaction(async (tx) => {
+      const removed = await tx.routineLike.deleteMany({
+        where: { userId, routineId },
+      });
+
+      if (removed.count === 1) {
+        await tx.routine.update({
+          where: { id: routineId },
+          data: { likes: { decrement: 1 } },
+        });
+        // Guard defensivo: el contador nunca debe quedar negativo.
+        await tx.routine.updateMany({
+          where: { id: routineId, likes: { lt: 0 } },
+          data: { likes: 0 },
+        });
+      }
+    });
   }
 }

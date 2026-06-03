@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { HttpException, NotFoundException } from '@nestjs/common';
+import {
+  HttpException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { RoutinesService } from './routines.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { GeminiService } from '../gemini/gemini.service';
@@ -289,6 +293,120 @@ describe('RoutinesService', () => {
       expect(mockPrismaService.routine.delete).toHaveBeenCalledWith({
         where: { id: 'r1' },
       });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // like
+  // -------------------------------------------------------------------------
+  describe('like', () => {
+    it('should throw NotFoundException when routine does not exist', async () => {
+      mockPrismaService.routine.findUnique.mockResolvedValue(null);
+
+      await expect(service.like('u1', 'nope')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
+
+    it('should throw ForbiddenException when liking a private routine', async () => {
+      mockPrismaService.routine.findUnique.mockResolvedValue({
+        isPublic: false,
+      });
+
+      await expect(service.like('u1', 'r1')).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
+
+    it('should increment likes on the first like of a public routine', async () => {
+      mockPrismaService.routine.findUnique.mockResolvedValue({
+        isPublic: true,
+      });
+      const txCreateMany = jest.fn().mockResolvedValue({ count: 1 });
+      const txUpdate = jest.fn();
+      mockTransaction.mockImplementation(
+        (fn: (tx: unknown) => Promise<unknown>) =>
+          fn({
+            routineLike: { createMany: txCreateMany },
+            routine: { update: txUpdate, updateMany: jest.fn() },
+          }),
+      );
+
+      await service.like('u1', 'r1');
+
+      expect(txCreateMany).toHaveBeenCalledWith({
+        data: [{ userId: 'u1', routineId: 'r1' }],
+        skipDuplicates: true,
+      });
+      expect(txUpdate).toHaveBeenCalledWith({
+        where: { id: 'r1' },
+        data: { likes: { increment: 1 } },
+      });
+    });
+
+    it('should NOT increment likes on a duplicate like', async () => {
+      mockPrismaService.routine.findUnique.mockResolvedValue({
+        isPublic: true,
+      });
+      const txUpdate = jest.fn();
+      mockTransaction.mockImplementation(
+        (fn: (tx: unknown) => Promise<unknown>) =>
+          fn({
+            routineLike: {
+              createMany: jest.fn().mockResolvedValue({ count: 0 }),
+            },
+            routine: { update: txUpdate, updateMany: jest.fn() },
+          }),
+      );
+
+      await service.like('u1', 'r1');
+
+      expect(txUpdate).not.toHaveBeenCalled();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // unlike
+  // -------------------------------------------------------------------------
+  describe('unlike', () => {
+    it('should decrement likes when removing an existing like', async () => {
+      const txUpdate = jest.fn();
+      const txUpdateMany = jest.fn();
+      mockTransaction.mockImplementation(
+        (fn: (tx: unknown) => Promise<unknown>) =>
+          fn({
+            routineLike: {
+              deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+            },
+            routine: { update: txUpdate, updateMany: txUpdateMany },
+          }),
+      );
+
+      await service.unlike('u1', 'r1');
+
+      expect(txUpdate).toHaveBeenCalledWith({
+        where: { id: 'r1' },
+        data: { likes: { decrement: 1 } },
+      });
+    });
+
+    it('should NOT decrement likes when there was no previous like', async () => {
+      const txUpdate = jest.fn();
+      mockTransaction.mockImplementation(
+        (fn: (tx: unknown) => Promise<unknown>) =>
+          fn({
+            routineLike: {
+              deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+            },
+            routine: { update: txUpdate, updateMany: jest.fn() },
+          }),
+      );
+
+      await service.unlike('u1', 'r1');
+
+      expect(txUpdate).not.toHaveBeenCalled();
     });
   });
 });
