@@ -9,7 +9,12 @@ const EXERCISES_JSON_URL =
 
 interface NewExternalExercise {
   id: string;
-  name: string;
+  name: {
+    en?: string;
+    es?: string;
+    it?: string;
+    tr?: string;
+  };
   category: string;
   body_part: string;
   equipment: string;
@@ -87,21 +92,17 @@ async function main() {
       mediaRecords.push({ url: `${GITHUB_BASE_URL}${ex.gif_url}`, type: 'GIF' });
     }
 
-    // Use Spanish if available, fallback to English
-    const instructionSteps = ex.instruction_steps?.es || ex.instruction_steps?.en || [];
-    const descriptionText = ex.instructions?.es || ex.instructions?.en || `Exercise: ${ex.name}`;
-
     const exerciseData = {
       name: ex.name,
       equipment: ex.equipment,
-      instructions: instructionSteps,
+      instructions: ex.instruction_steps,
       categoryId: category.id,
-      description: descriptionText,
+      description: ex.instructions,
     };
 
     try {
       await prisma.exercise.upsert({
-        where: { name: ex.name },
+        where: { id: ex.id },
         update: {
           ...exerciseData,
           primaryMuscles: {
@@ -118,6 +119,7 @@ async function main() {
           },
         },
         create: {
+          id: ex.id,
           ...exerciseData,
           primaryMuscles: {
             connect: primaryMusclesArray.filter(Boolean).map((m) => ({
@@ -136,7 +138,8 @@ async function main() {
       });
       createdCount++;
     } catch (e) {
-      console.error(`Failed to create exercise ${ex.name}:`, e);
+      const displayName = ex.name?.en || ex.name?.es || ex.id;
+      console.error(`Failed to create exercise ${displayName}:`, e);
     }
   }
 

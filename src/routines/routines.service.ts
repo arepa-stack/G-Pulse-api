@@ -50,15 +50,24 @@ export class RoutinesService {
     for (let i = 0; i < exercises.length; i++) {
       const exData = exercises[i];
 
-      let exercise = await this.prisma.exercise.findFirst({
-        where: { name: exData.exerciseName },
-      });
+      const matches = await this.prisma.$queryRaw<{ id: string }[]>`
+        SELECT id FROM "Exercise"
+        WHERE "name"->>'en' ILIKE ${exData.exerciseName}
+           OR "name"->>'es' ILIKE ${exData.exerciseName}
+           OR "name"->>'it' ILIKE ${exData.exerciseName}
+           OR "name"->>'tr' ILIKE ${exData.exerciseName}
+        LIMIT 1
+      `;
+
+      let exercise = matches.length > 0
+        ? await this.prisma.exercise.findUnique({ where: { id: matches[0].id } })
+        : null;
 
       if (!exercise) {
         exercise = await this.prisma.exercise.create({
           data: {
-            name: exData.exerciseName,
-            description: 'AI Generated',
+            name: { en: exData.exerciseName },
+            description: { en: 'AI Generated' },
           },
         });
       }
@@ -193,9 +202,17 @@ export class RoutinesService {
 
         for (let i = 0; i < dto.exercises.length; i++) {
           const ex = dto.exercises[i];
-          const exercise = await tx.exercise.findFirst({
-            where: { name: ex.exerciseName },
-          });
+          const matches = await tx.$queryRaw<{ id: string }[]>`
+            SELECT id FROM "Exercise"
+            WHERE "name"->>'en' ILIKE ${ex.exerciseName}
+               OR "name"->>'es' ILIKE ${ex.exerciseName}
+               OR "name"->>'it' ILIKE ${ex.exerciseName}
+               OR "name"->>'tr' ILIKE ${ex.exerciseName}
+            LIMIT 1
+          `;
+          const exercise = matches.length > 0
+            ? await tx.exercise.findUnique({ where: { id: matches[0].id } })
+            : null;
 
           if (!exercise) continue;
 

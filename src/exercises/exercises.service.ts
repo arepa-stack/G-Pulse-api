@@ -16,8 +16,22 @@ export class ExercisesService {
     cursor?: Prisma.ExerciseWhereUniqueInput;
     where?: Prisma.ExerciseWhereInput;
     orderBy?: Prisma.ExerciseOrderByWithRelationInput;
+    search?: string;
   }) {
-    const { skip, take, cursor, where, orderBy } = params;
+    const { skip, take, cursor, where = {}, orderBy, search } = params;
+
+    if (search) {
+      const matchingExercises = await this.prisma.$queryRaw<{ id: string }[]>`
+        SELECT id FROM "Exercise"
+        WHERE "name"->>'en' ILIKE ${`%${search}%`}
+           OR "name"->>'es' ILIKE ${`%${search}%`}
+           OR "name"->>'it' ILIKE ${`%${search}%`}
+           OR "name"->>'tr' ILIKE ${`%${search}%`}
+      `;
+      const ids = matchingExercises.map((e) => e.id);
+      where.id = { in: ids };
+    }
+
     return this.prisma.exercise.findMany({
       skip,
       take,

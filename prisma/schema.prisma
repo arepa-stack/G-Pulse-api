@@ -35,9 +35,9 @@ model User {
 
 model Exercise {
   id           String   @id @default(uuid())
-  name         String   @unique
-  description  String?
-  instructions String[]
+  name         Json
+  description  Json?
+  instructions Json?
   difficulty   String? // beginner, intermediate, expert
   mechanic     String? // compound, isolation
   force        String? // push, pull, static

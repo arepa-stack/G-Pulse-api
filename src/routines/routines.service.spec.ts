@@ -21,6 +21,7 @@ describe('RoutinesService', () => {
     },
     exercise: {
       findFirst: jest.fn(),
+      findUnique: jest.fn(),
       create: jest.fn(),
     },
     routineExercise: {
@@ -31,6 +32,7 @@ describe('RoutinesService', () => {
       deleteMany: jest.fn(),
     },
     $transaction: mockTransaction,
+    $queryRaw: jest.fn(),
   };
 
   const mockGeminiService = {
@@ -90,7 +92,8 @@ describe('RoutinesService', () => {
       const mockResult = { id: 'r1', exercises: [{ exercise: mockExercise }] };
 
       mockPrismaService.routine.create.mockResolvedValue(mockRoutine);
-      mockPrismaService.exercise.findFirst.mockResolvedValue(mockExercise);
+      mockPrismaService.$queryRaw.mockResolvedValue([{ id: mockExercise.id }]);
+      mockPrismaService.exercise.findUnique.mockResolvedValue(mockExercise);
       mockPrismaService.routineExercise.create.mockResolvedValue(true);
       mockPrismaService.routine.findUnique.mockResolvedValue(mockResult);
 
@@ -134,7 +137,7 @@ describe('RoutinesService', () => {
 
       mockGeminiService.generateRoutineJson.mockResolvedValue(aiResponse);
       mockPrismaService.routine.create.mockResolvedValue(mockRoutine);
-      mockPrismaService.exercise.findFirst.mockResolvedValue(null);
+      mockPrismaService.$queryRaw.mockResolvedValue([]);
       mockPrismaService.exercise.create.mockResolvedValue(newEx);
       mockPrismaService.routine.findUnique.mockResolvedValue(mockRoutine);
 
@@ -144,7 +147,10 @@ describe('RoutinesService', () => {
         'Make me strong',
       );
       expect(mockPrismaService.exercise.create).toHaveBeenCalledWith({
-        data: { name: 'New AI Exercise', description: 'AI Generated' },
+        data: {
+          name: { en: 'New AI Exercise' },
+          description: { en: 'AI Generated' },
+        },
       });
       expect(result).toEqual(mockRoutine);
     });
@@ -238,8 +244,9 @@ describe('RoutinesService', () => {
         (fn: (tx: unknown) => Promise<unknown>) => {
           const tx = {
             routineExercise: { deleteMany: jest.fn(), create: jest.fn() },
-            exercise: { findFirst: jest.fn() },
+            exercise: { findUnique: jest.fn().mockResolvedValue({ id: 'e1' }) },
             routine: { update: jest.fn().mockResolvedValue(updated) },
+            $queryRaw: jest.fn().mockResolvedValue([{ id: 'e1' }]),
           };
           return fn(tx);
         },

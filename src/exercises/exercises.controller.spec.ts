@@ -73,8 +73,8 @@ describe('ExercisesController', () => {
             { primaryMuscles: { some: { name: 'legs' } } },
             { secondaryMuscles: { some: { name: 'legs' } } },
           ],
-          name: { contains: 'squat', mode: 'insensitive' },
         },
+        search: 'squat',
       });
       expect(result).toEqual(mockResult);
     });

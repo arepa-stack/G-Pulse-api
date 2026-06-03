@@ -1,25 +1,35 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsArray, IsUrl, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsUrl, IsIn, IsObject } from 'class-validator';
 
 export class CreateExerciseDto {
-  @ApiProperty({ example: 'Bench Press' })
-  @IsString()
-  name: string;
+  @ApiProperty({
+    example: { en: 'Bench Press', es: 'Press de banca' },
+    description: 'Nombres localizados del ejercicio',
+  })
+  @IsObject()
+  name: Record<string, string>;
 
   @ApiPropertyOptional({
-    example: 'Un ejercicio clásico de empuje para desarrollar el pecho.',
+    example: {
+      en: 'A classic chest push exercise.',
+      es: 'Un ejercicio clásico de empuje para desarrollar el pecho.',
+    },
+    description: 'Descripciones localizadas del ejercicio',
   })
   @IsOptional()
-  @IsString()
-  description?: string;
+  @IsObject()
+  description?: Record<string, string>;
 
   @ApiPropertyOptional({
-    example: ['Acuéstate', 'Empuja la barra', 'Baja controlado'],
+    example: {
+      en: ['Lie flat on the bench', 'Press the weight up'],
+      es: ['Acuéstate en el banco', 'Empuja el peso hacia arriba'],
+    },
+    description: 'Instrucciones/pasos localizados del ejercicio',
   })
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  instructions?: string[];
+  @IsObject()
+  instructions?: Record<string, string[]>;
 
   @ApiPropertyOptional({ example: 'intermediate' })
   @IsOptional()

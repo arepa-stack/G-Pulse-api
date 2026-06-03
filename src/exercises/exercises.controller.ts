@@ -29,14 +29,11 @@ export class ExercisesController {
       ];
     }
 
-    if (search) {
-      where.name = { contains: search, mode: 'insensitive' };
-    }
-
     return this.exercisesService.findAll({
       skip,
       take,
       where,
+      search,
     });
   }
 

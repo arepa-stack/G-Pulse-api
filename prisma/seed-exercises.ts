@@ -162,10 +162,13 @@ async function main() {
     const connectMuscles = (muscles: { id: string }[]) =>
       muscles.map((m) => ({ id: m.id }));
 
+    const exId = ex.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-');
+
     await prisma.exercise.upsert({
-      where: { name: ex.name },
+      where: { id: exId },
       update: {
-        description: ex.description,
+        name: { es: ex.name },
+        description: { es: ex.description },
         equipment: ex.equipment,
         difficulty: ex.difficulty,
         category: { connect: { id: category.id } },
@@ -173,8 +176,9 @@ async function main() {
         secondaryMuscles: { set: connectMuscles(secondaryMuscles) },
       },
       create: {
-        name: ex.name,
-        description: ex.description,
+        id: exId,
+        name: { es: ex.name },
+        description: { es: ex.description },
         equipment: ex.equipment,
         difficulty: ex.difficulty,
         category: { connect: { id: category.id } },
