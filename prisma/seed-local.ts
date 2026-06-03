@@ -142,6 +142,9 @@ async function main() {
         },
       });
       createdCount++;
+      if (createdCount % 50 === 0) {
+        console.log(`Processed ${createdCount}/${exercises.length} exercises...`);
+      }
     } catch (e) {
       const displayName = ex.name?.en || ex.name?.es || ex.id;
       console.error(`Failed to create exercise ${displayName}:`, e);
