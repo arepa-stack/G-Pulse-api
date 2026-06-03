@@ -6,6 +6,8 @@ const GITHUB_BASE_URL =
   'https://raw.githubusercontent.com/arepa-stack/exercises-dataset/main/';
 const EXERCISES_JSON_URL =
   'https://raw.githubusercontent.com/arepa-stack/exercises-dataset/main/data/exercises.json';
+const DICTIONARIES_JSON_URL =
+  'https://raw.githubusercontent.com/arepa-stack/exercises-dataset/main/data/dictionaries.json';
 
 interface NewExternalExercise {
   id: string;
@@ -39,6 +41,9 @@ interface NewExternalExercise {
 
 async function main() {
   console.log('Starting Seed for the new dataset structure (ES)...');
+  
+  await seedDictionaries();
+
   console.log(`Fetching exercises from GitHub...`);
 
   const response = await fetch(EXERCISES_JSON_URL);
@@ -146,6 +151,44 @@ async function main() {
   console.log(
     `Seed Complete: Processed ${exercises.length}, Created/Upserted ${createdCount}.`,
   );
+}
+
+async function seedDictionaries() {
+  console.log('Fetching dictionaries from GitHub...');
+  const response = await fetch(DICTIONARIES_JSON_URL);
+  if (!response.ok) {
+    console.error(
+      `Failed to fetch dictionaries.json: ${response.status} ${response.statusText}`,
+    );
+    process.exit(1);
+  }
+
+  const dictData = (await response.json()) as Record<string, Record<string, Record<string, string>>>;
+  console.log('Seeding dictionaries...');
+
+  let count = 0;
+  for (const [type, keys] of Object.entries(dictData)) {
+    for (const [key, translations] of Object.entries(keys)) {
+      await prisma.dictionary.upsert({
+        where: {
+          type_key: {
+            type,
+            key,
+          },
+        },
+        update: {
+          translations,
+        },
+        create: {
+          type,
+          key,
+          translations,
+        },
+      });
+      count++;
+    }
+  }
+  console.log(`Dictionaries seed complete: ${count} entries.`);
 }
 
 main()

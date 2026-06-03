@@ -12,6 +12,7 @@ import { ProgressModule } from './progress/progress.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { AdminModule } from './admin/admin.module';
 import { MailModule } from './mail/mail.module';
+import { DictionariesModule } from './dictionaries/dictionaries.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { MailModule } from './mail/mail.module';
     SubscriptionsModule,
     AdminModule,
     MailModule,
+    DictionariesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

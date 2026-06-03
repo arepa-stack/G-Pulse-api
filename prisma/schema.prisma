@@ -180,3 +180,12 @@ model WorkoutSet {
   exercise      Exercise    @relation(fields: [exerciseId], references: [id])
   createdAt     DateTime    @default(now())
 }
+
+model Dictionary {
+  id           String @id @default(uuid())
+  type         String // ej: 'equipment', 'body_part', 'category'
+  key          String // ej: 'body weight', 'dumbbell', 'waist'
+  translations Json   // ej: { "en": "body weight", "es": "peso corporal", "it": "peso corporeo", "tr": "vücut ağırlığı" }
+
+  @@unique([type, key])
+}
