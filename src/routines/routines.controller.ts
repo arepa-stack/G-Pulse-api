@@ -82,4 +82,20 @@ export class RoutinesController {
   async remove(@Request() req: AuthRequest, @Param('id') id: string) {
     return this.routinesService.removeForUser(req.user.id, id);
   }
+
+  @Post(':id/like')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Like a public routine (idempotent)' })
+  @ApiNoContentResponse()
+  async like(@Request() req: AuthRequest, @Param('id') id: string) {
+    return this.routinesService.like(req.user.id, id);
+  }
+
+  @Delete(':id/like')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remove a like from a routine (idempotent)' })
+  @ApiNoContentResponse()
+  async unlike(@Request() req: AuthRequest, @Param('id') id: string) {
+    return this.routinesService.unlike(req.user.id, id);
+  }
 }
