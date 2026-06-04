@@ -59,6 +59,12 @@ export class RoutinesController {
     return this.routinesService.getPublicRoutines(query);
   }
 
+  @Get('today')
+  @ApiOperation({ summary: 'Get the routine scheduled for today' })
+  async getToday(@Request() req: AuthRequest) {
+    return this.routinesService.getToday(req.user.id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a single routine by id' })
   async findOne(@Request() req: AuthRequest, @Param('id') id: string) {

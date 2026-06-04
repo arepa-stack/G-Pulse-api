@@ -337,6 +337,44 @@ export class RoutinesService {
     });
   }
 
+  async getToday(userId: string) {
+    const day = new Date().getDay();
+    const row = await this.prisma.routineSchedule.findFirst({
+      where: {
+        userId,
+        dayOfWeek: day,
+        enabled: true,
+      },
+      include: {
+        routine: {
+          include: {
+            exercises: {
+              include: {
+                exercise: {
+                  include: {
+                    media: {
+                      where: {
+                        isPaused: false,
+                        OR: [
+                          { userId: null },
+                          { isPublic: true },
+                          { userId },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+              orderBy: { order: 'asc' },
+            },
+          },
+        },
+      },
+    });
+
+    return row ? row.routine : null;
+  }
+
   async favorite(userId: string, routineId: string) {
     await this.getPublicRoutineOrThrow(routineId);
 

@@ -22,6 +22,7 @@ describe('RoutinesController', () => {
     findOneForUser: jest.fn(),
     updateForUser: jest.fn(),
     removeForUser: jest.fn(),
+    getToday: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -78,6 +79,18 @@ describe('RoutinesController', () => {
         query,
       );
       expect(result).toEqual(response);
+    });
+  });
+
+  describe('getToday', () => {
+    it('should call getToday with userId from request', async () => {
+      const routine = { id: 'r1', name: 'Today Routine' };
+      mockService.getToday.mockResolvedValue(routine);
+
+      const result = await controller.getToday(mockReq);
+
+      expect(mockService.getToday).toHaveBeenCalledWith(mockUser.id);
+      expect(result).toEqual(routine);
     });
   });
 

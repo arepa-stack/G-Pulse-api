@@ -34,6 +34,7 @@ model User {
   routineLikes  RoutineLike[]
   exerciseMedia ExerciseMedia[]
   goals         Goal[]
+  schedule      RoutineSchedule[]
 }
 
 model Exercise {
@@ -109,6 +110,7 @@ model Routine {
   exercises   RoutineExercise[]
   favoritedBy UserFavorite[]
   likedBy     RoutineLike[]
+  scheduledFor RoutineSchedule[]
 }
 
 model RoutineExercise {
@@ -238,4 +240,19 @@ model Dictionary {
   translations Json   // ej: { "en": "body weight", "es": "peso corporal", "it": "peso corporeo", "tr": "vücut ağırlığı" }
 
   @@unique([type, key])
+}
+
+model RoutineSchedule {
+  userId    String
+  dayOfWeek Int       // 0..6 ; 0=Sun, 6=Sat
+  routineId String
+  enabled   Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user      User      @relation(fields: [userId],    references: [id], onDelete: Cascade)
+  routine   Routine   @relation(fields: [routineId], references: [id], onDelete: Cascade)
+
+  @@id([userId, dayOfWeek])
+  @@index([routineId])
 }
