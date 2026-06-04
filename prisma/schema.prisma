@@ -33,6 +33,7 @@ model User {
   favorites     UserFavorite[]
   routineLikes  RoutineLike[]
   exerciseMedia ExerciseMedia[]
+  goals         Goal[]
 }
 
 model Exercise {
@@ -181,6 +182,34 @@ enum SubscriptionPlan {
 enum Role {
   USER
   ADMIN
+}
+
+enum GoalType {
+  WEIGHT
+  WORKOUTS_PER_WEEK
+  CALORIES_BURN
+  DURATION_MINUTES
+}
+
+enum GoalStatus {
+  ACTIVE
+  ACHIEVED
+  ABANDONED
+}
+
+model Goal {
+  id           String     @id @default(uuid())
+  userId       String
+  type         GoalType
+  targetValue  Float
+  currentValue Float      @default(0.0)
+  startDate    DateTime   @default(now())
+  endDate      DateTime?
+  status       GoalStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AiResponseCache {
