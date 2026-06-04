@@ -73,7 +73,18 @@ export class ScheduleService {
       },
     });
 
-    const calendar = [];
+    type RoutineSummary = {
+      id: string;
+      name: string;
+      _count: { exercises: number };
+    };
+
+    const calendar: {
+      dayOfWeek: number;
+      routine: RoutineSummary | null;
+      enabled: boolean;
+    }[] = [];
+
     for (let d = 0; d <= 6; d++) {
       const scheduled = schedules.find((s) => s.dayOfWeek === d);
       calendar.push({
