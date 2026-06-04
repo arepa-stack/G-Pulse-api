@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,6 +9,8 @@ import { Prisma, Role, SubscriptionPlan } from '@prisma/client';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
+import { CreateMuscleDto } from './dto/create-muscle.dto';
+import { UpdateMuscleDto } from './dto/update-muscle.dto';
 
 @Injectable()
 export class AdminService {
@@ -282,5 +285,88 @@ export class AdminService {
       premiumConversionRate:
         totalUsers > 0 ? (premiumUsers / totalUsers) * 100 : 0,
     };
+  }
+
+  // ---- MUSCLES (catálogo admin, F-14) ----
+
+  async findAllMuscles() {
+    return this.prisma.muscle.findMany({
+      orderBy: { name: 'asc' },
+      include: {
+        _count: {
+          select: { primaryExercises: true, secondaryExercises: true },
+        },
+      },
+    });
+  }
+
+  async createMuscle(dto: CreateMuscleDto) {
+    try {
+      return await this.prisma.muscle.create({ data: dto });
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') {
+        throw new ConflictException(
+          `A muscle named "${dto.name}" already exists`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async updateMuscle(id: string, dto: UpdateMuscleDto) {
+    const muscle = await this.prisma.muscle.findUnique({ where: { id } });
+    if (!muscle) {
+      throw new NotFoundException(`Muscle with ID ${id} not found`);
+    }
+
+    try {
+      return await this.prisma.muscle.update({ where: { id }, data: dto });
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') {
+        throw new ConflictException(
+          `A muscle named "${dto.name}" already exists`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async deleteMuscle(id: string, force = false) {
+    const muscle = await this.prisma.muscle.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: { primaryExercises: true, secondaryExercises: true },
+        },
+      },
+    });
+
+    if (!muscle) {
+      throw new NotFoundException(`Muscle with ID ${id} not found`);
+    }
+
+    const references =
+      muscle._count.primaryExercises + muscle._count.secondaryExercises;
+
+    if (references > 0 && !force) {
+      throw new ConflictException({
+        message: `Muscle is referenced by ${references} exercise(s). Use ?force=true to disconnect and delete.`,
+        references,
+      });
+    }
+
+    // Desasocia las relaciones M:N y borra de forma atómica.
+    await this.prisma.$transaction([
+      this.prisma.muscle.update({
+        where: { id },
+        data: {
+          primaryExercises: { set: [] },
+          secondaryExercises: { set: [] },
+        },
+      }),
+      this.prisma.muscle.delete({ where: { id } }),
+    ]);
+
+    return { message: 'Muscle deleted successfully' };
   }
 }

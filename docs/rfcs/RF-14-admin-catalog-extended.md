@@ -4,7 +4,7 @@
 |---|---|
 | **Feature ID** | F-14 |
 | **PRD asociado** | [`../prds/PF-14-admin-catalog-extended.md`](../prds/PF-14-admin-catalog-extended.md) |
-| **Status** | Propuesto |
+| **Status** | Parcial — músculos (#69) implementados; categorías (#70) pendientes |
 | **Esfuerzo** | S (1-1.5 días) |
 
 ## 1. TL;DR

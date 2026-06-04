@@ -16,6 +16,7 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { RolesGuard } from '../auth/roles/roles.guard';
@@ -24,6 +25,8 @@ import { Role, SubscriptionPlan } from '@prisma/client';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
+import { CreateMuscleDto } from './dto/create-muscle.dto';
+import { UpdateMuscleDto } from './dto/update-muscle.dto';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -131,5 +134,41 @@ export class AdminController {
   @ApiOperation({ summary: 'Get administrative dashboard statistics' })
   async getStats() {
     return this.adminService.getDashboardStats();
+  }
+
+  // ---- MUSCLES ----
+
+  @Get('muscles')
+  @ApiOperation({
+    summary: 'List all muscles with their primary/secondary exercise counts',
+  })
+  async getMuscles() {
+    return this.adminService.findAllMuscles();
+  }
+
+  @Post('muscles')
+  @ApiOperation({ summary: 'Create a new muscle in the catalog' })
+  @ApiBody({ type: CreateMuscleDto })
+  async createMuscle(@Body() dto: CreateMuscleDto) {
+    return this.adminService.createMuscle(dto);
+  }
+
+  @Patch('muscles/:id')
+  @ApiOperation({ summary: 'Update an existing muscle' })
+  @ApiParam({ name: 'id', description: 'Muscle UUID' })
+  @ApiBody({ type: UpdateMuscleDto })
+  async updateMuscle(@Param('id') id: string, @Body() dto: UpdateMuscleDto) {
+    return this.adminService.updateMuscle(id, dto);
+  }
+
+  @Delete('muscles/:id')
+  @ApiOperation({
+    summary:
+      'Delete a muscle. Use ?force=true to detach it from exercises before deleting',
+  })
+  @ApiParam({ name: 'id', description: 'Muscle UUID' })
+  @ApiQuery({ name: 'force', required: false, type: Boolean })
+  async deleteMuscle(@Param('id') id: string, @Query('force') force?: string) {
+    return this.adminService.deleteMuscle(id, force === 'true');
   }
 }
