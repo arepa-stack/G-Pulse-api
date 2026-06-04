@@ -2,11 +2,6 @@ name: Deploy Beta
 
 on:
   workflow_dispatch:
-    inputs:
-      branch:
-        description: 'Branch to deploy'
-        required: true
-        default: 'master'
 
 concurrency:
   group: deploy-beta
@@ -30,8 +25,8 @@ jobs:
           script: |
             set -e
             cd /orgs/g-pulse/G-Pulse-api
-            git fetch origin ${{ github.event.inputs.branch }}
-            git reset --hard origin/${{ github.event.inputs.branch }}
+            git fetch origin ${{ github.ref_name }}
+            git reset --hard origin/${{ github.ref_name }}
             docker rm -f g-pulse-api || true
             docker build -t g-pulse-api .
             docker run -d \
