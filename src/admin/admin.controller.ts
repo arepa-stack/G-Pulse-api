@@ -10,7 +10,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+  ApiBody,
+} from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { RolesGuard } from '../auth/roles/roles.guard';
 import { Roles } from '../auth/roles/roles.decorator';
@@ -46,12 +52,14 @@ export class AdminController {
 
   @Get('users/:id')
   @ApiOperation({ summary: 'Get detailed information about a specific user' })
+  @ApiParam({ name: 'id', description: 'User UUID' })
   async getUser(@Param('id') id: string) {
     return this.adminService.findUserById(id);
   }
 
   @Patch('users/:id')
   @ApiOperation({ summary: 'Update a user (e.g. change plan or role)' })
+  @ApiParam({ name: 'id', description: 'User UUID' })
   async updateUser(
     @Param('id') id: string,
     @Body()
@@ -64,6 +72,7 @@ export class AdminController {
 
   @Delete('users/:id')
   @ApiOperation({ summary: 'Delete a user permanently' })
+  @ApiParam({ name: 'id', description: 'User UUID' })
   async deleteUser(@Param('id') id: string) {
     return this.adminService.deleteUser(id);
   }
@@ -72,12 +81,15 @@ export class AdminController {
 
   @Post('exercises')
   @ApiOperation({ summary: 'Create a new exercise in the catalog' })
+  @ApiBody({ type: CreateExerciseDto })
   async createExercise(@Body() data: CreateExerciseDto) {
     return this.adminService.createExercise(data);
   }
 
   @Patch('exercises/:id')
   @ApiOperation({ summary: 'Update an existing exercise' })
+  @ApiParam({ name: 'id', description: 'Exercise UUID' })
+  @ApiBody({ type: UpdateExerciseDto })
   async updateExercise(
     @Param('id') id: string,
     @Body() data: UpdateExerciseDto,
@@ -87,6 +99,7 @@ export class AdminController {
 
   @Delete('exercises/:id')
   @ApiOperation({ summary: 'Delete an exercise' })
+  @ApiParam({ name: 'id', description: 'Exercise UUID' })
   async deleteExercise(@Param('id') id: string) {
     return this.adminService.deleteExercise(id);
   }
@@ -111,6 +124,7 @@ export class AdminController {
   @ApiOperation({
     summary: 'Get detailed information about a specific routine',
   })
+  @ApiParam({ name: 'id', description: 'Routine UUID' })
   async getRoutine(@Param('id') id: string) {
     return this.adminService.findRoutineById(id);
   }

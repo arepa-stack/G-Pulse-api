@@ -18,6 +18,8 @@ import {
   ApiBearerAuth,
   ApiConsumes,
   ApiBody,
+  ApiParam,
+  ApiNoContentResponse,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -78,6 +80,8 @@ export class ExerciseImagesController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete user-uploaded or admin media' })
+  @ApiParam({ name: 'id', description: 'Exercise media UUID' })
+  @ApiNoContentResponse()
   async deleteMedia(@Req() req: AuthRequest, @Param('id') id: string) {
     await this.exerciseImagesService.deleteMedia(id, req.user.id, req.user.role);
   }
@@ -86,6 +90,8 @@ export class ExerciseImagesController {
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Pause or resume exercise media (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Exercise media UUID' })
+  @ApiBody({ type: UpdateMediaStatusDto })
   async updateStatus(
     @Param('id') id: string,
     @Body() dto: UpdateMediaStatusDto,

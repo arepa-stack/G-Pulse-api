@@ -1,5 +1,5 @@
 import { Controller, Post, Body, Request, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { GeminiService } from './gemini.service';
 import { GenerateTextDto } from './dto/generate-text.dto';
@@ -17,6 +17,7 @@ export class GeminiController {
 
   @Post('generate')
   @ApiOperation({ summary: 'Generate text using Gemini AI' })
+  @ApiBody({ type: GenerateTextDto })
   async generateText(
     @Request() req: AuthRequest,
     @Body() body: GenerateTextDto,

@@ -1,5 +1,5 @@
 import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { SubscriptionsService } from './subscriptions.service';
 import { UpgradeSubscriptionDto } from './dto/upgrade-subscription.dto';
@@ -13,6 +13,7 @@ export class SubscriptionsController {
 
   @Post('upgrade')
   @ApiOperation({ summary: 'Upgrade user subscription plan' })
+  @ApiBody({ type: UpgradeSubscriptionDto })
   async upgrade(@Request() req, @Body() upgradeData: UpgradeSubscriptionDto) {
     return this.subscriptionsService.createSubscription(
       req.user.id,

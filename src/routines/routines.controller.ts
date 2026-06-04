@@ -17,6 +17,10 @@ import {
   ApiOperation,
   ApiBearerAuth,
   ApiNoContentResponse,
+  ApiParam,
+  ApiBody,
+  ApiOkResponse,
+  ApiCreatedResponse,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { RoutinesService } from './routines.service';
@@ -37,6 +41,8 @@ export class RoutinesController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new routine' })
+  @ApiBody({ type: CreateRoutineDto })
+  @ApiCreatedResponse({ description: 'Routine created' })
   async createRoutine(
     @Request() req: AuthRequest,
     @Body() dto: CreateRoutineDto,
@@ -67,12 +73,15 @@ export class RoutinesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a single routine by id' })
+  @ApiParam({ name: 'id', description: 'Routine UUID' })
   async findOne(@Request() req: AuthRequest, @Param('id') id: string) {
     return this.routinesService.findOneForUser(req.user.id, id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a routine owned by the authenticated user' })
+  @ApiParam({ name: 'id', description: 'Routine UUID' })
+  @ApiBody({ type: UpdateRoutineDto })
   async update(
     @Request() req: AuthRequest,
     @Param('id') id: string,
@@ -84,6 +93,7 @@ export class RoutinesController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a routine owned by the authenticated user' })
+  @ApiParam({ name: 'id', description: 'Routine UUID' })
   @ApiNoContentResponse()
   async remove(@Request() req: AuthRequest, @Param('id') id: string) {
     return this.routinesService.removeForUser(req.user.id, id);
@@ -92,6 +102,7 @@ export class RoutinesController {
   @Post(':id/like')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Like a public routine (idempotent)' })
+  @ApiParam({ name: 'id', description: 'Routine UUID' })
   @ApiNoContentResponse()
   async like(@Request() req: AuthRequest, @Param('id') id: string) {
     return this.routinesService.like(req.user.id, id);
@@ -100,6 +111,7 @@ export class RoutinesController {
   @Delete(':id/like')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remove a like from a routine (idempotent)' })
+  @ApiParam({ name: 'id', description: 'Routine UUID' })
   @ApiNoContentResponse()
   async unlike(@Request() req: AuthRequest, @Param('id') id: string) {
     return this.routinesService.unlike(req.user.id, id);
@@ -108,6 +120,7 @@ export class RoutinesController {
   @Post(':id/favorite')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Favorite a public routine (idempotent)' })
+  @ApiParam({ name: 'id', description: 'Routine UUID' })
   @ApiNoContentResponse()
   async favorite(@Request() req: AuthRequest, @Param('id') id: string) {
     return this.routinesService.favorite(req.user.id, id);
@@ -116,6 +129,7 @@ export class RoutinesController {
   @Delete(':id/favorite')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remove a public routine from favorites (idempotent)' })
+  @ApiParam({ name: 'id', description: 'Routine UUID' })
   @ApiNoContentResponse()
   async unfavorite(@Request() req: AuthRequest, @Param('id') id: string) {
     return this.routinesService.unfavorite(req.user.id, id);

@@ -8,7 +8,13 @@ import {
   NotFoundException,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiBody,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -34,6 +40,7 @@ export class UsersController {
 
   @Patch('profile')
   @ApiOperation({ summary: 'Update user profile' })
+  @ApiBody({ type: UpdateProfileDto })
   async updateProfile(@Request() req, @Body() updateData: UpdateProfileDto) {
     return this.usersService.update(req.user.id, updateData);
   }
@@ -46,6 +53,7 @@ export class UsersController {
 
   @Get('me/favorites')
   @ApiOperation({ summary: 'Get current user favorite routines (paginated)' })
+  @ApiOkResponse({ description: 'Paginated list of favorited routines' })
   async getFavorites(@Request() req, @Query() query: FindAllRoutinesDto) {
     return this.usersService.getFavorites(req.user.id, query);
   }

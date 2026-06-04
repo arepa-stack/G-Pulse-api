@@ -17,6 +17,7 @@ import { StorageModule } from './storage/storage.module';
 import { ExerciseImagesModule } from './exercise-images/exercise-images.module';
 import { GoalsModule } from './goals/goals.module';
 import { ScheduleModule } from './schedule/schedule.module';
+import { MeasurementsModule } from './measurements/measurements.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ScheduleModule } from './schedule/schedule.module';
     ExerciseImagesModule,
     GoalsModule,
     ScheduleModule,
+    MeasurementsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

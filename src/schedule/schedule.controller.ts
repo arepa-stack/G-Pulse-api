@@ -16,6 +16,9 @@ import {
   ApiOperation,
   ApiBearerAuth,
   ApiNoContentResponse,
+  ApiParam,
+  ApiBody,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { ScheduleService } from './schedule.service';
@@ -36,6 +39,8 @@ export class ScheduleController {
   @ApiOperation({
     summary: 'Schedule or replace a routine for a day of the week',
   })
+  @ApiBody({ type: UpsertScheduleDto })
+  @ApiOkResponse({ description: 'Schedule upserted' })
   async upsert(@Request() req: AuthRequest, @Body() dto: UpsertScheduleDto) {
     return this.scheduleService.upsert(req.user.id, dto);
   }
@@ -49,6 +54,11 @@ export class ScheduleController {
   @Delete(':dayOfWeek')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remove routine assignment for a day of the week' })
+  @ApiParam({
+    name: 'dayOfWeek',
+    description: '0 = Sunday … 6 = Saturday',
+    example: 1,
+  })
   @ApiNoContentResponse()
   async remove(
     @Request() req: AuthRequest,

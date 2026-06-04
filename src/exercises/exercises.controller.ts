@@ -1,5 +1,11 @@
 import { Controller, Get, Query, Param, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { ExercisesService } from './exercises.service';
 import { FindAllExercisesDto } from './dto/find-all-exercises.dto';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
@@ -43,6 +49,8 @@ export class ExercisesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a single exercise by ID' })
+  @ApiParam({ name: 'id', description: 'Exercise UUID' })
+  @ApiOkResponse({ description: 'Exercise details' })
   async findOne(@Request() req: any, @Param('id') id: string) {
     return this.exercisesService.findOne(id, req.user);
   }
