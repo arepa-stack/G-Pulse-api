@@ -11,6 +11,7 @@ describe('UsersController', () => {
     findOne: jest.fn(),
     update: jest.fn(),
     getStats: jest.fn(),
+    getFavorites: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -90,6 +91,19 @@ describe('UsersController', () => {
       await expect(controller.getProfile(mockReq)).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('getFavorites', () => {
+    it('should call usersService.getFavorites with user id and query', async () => {
+      const mockReq = { user: { id: 'user-uuid-1' } };
+      const query = { page: '1', limit: '10' };
+      const response = { data: [], meta: { total: 0 } };
+      mockUsersService.getFavorites.mockResolvedValue(response);
+
+      const result = await controller.getFavorites(mockReq, query);
+      expect(service.getFavorites).toHaveBeenCalledWith('user-uuid-1', query);
+      expect(result).toEqual(response);
     });
   });
 });

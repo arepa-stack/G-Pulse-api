@@ -6,11 +6,13 @@ import {
   UseGuards,
   Request,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { FindAllRoutinesDto } from '../routines/dto/find-all-routines.dto';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -40,5 +42,11 @@ export class UsersController {
   @ApiOperation({ summary: 'Get user training statistics' })
   async getStats(@Request() req) {
     return this.usersService.getStats(req.user.id);
+  }
+
+  @Get('me/favorites')
+  @ApiOperation({ summary: 'Get current user favorite routines (paginated)' })
+  async getFavorites(@Request() req, @Query() query: FindAllRoutinesDto) {
+    return this.usersService.getFavorites(req.user.id, query);
   }
 }

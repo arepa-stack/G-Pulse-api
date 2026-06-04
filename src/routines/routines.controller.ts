@@ -104,4 +104,20 @@ export class RoutinesController {
   async unlike(@Request() req: AuthRequest, @Param('id') id: string) {
     return this.routinesService.unlike(req.user.id, id);
   }
+
+  @Post(':id/favorite')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Favorite a public routine (idempotent)' })
+  @ApiNoContentResponse()
+  async favorite(@Request() req: AuthRequest, @Param('id') id: string) {
+    return this.routinesService.favorite(req.user.id, id);
+  }
+
+  @Delete(':id/favorite')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remove a public routine from favorites (idempotent)' })
+  @ApiNoContentResponse()
+  async unfavorite(@Request() req: AuthRequest, @Param('id') id: string) {
+    return this.routinesService.unfavorite(req.user.id, id);
+  }
 }
