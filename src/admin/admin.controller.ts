@@ -20,9 +20,10 @@ import {
 import { AdminService } from './admin.service';
 import { RolesGuard } from '../auth/roles/roles.guard';
 import { Roles } from '../auth/roles/roles.decorator';
-import { Role, SubscriptionPlan, Prisma } from '@prisma/client';
+import { Role, SubscriptionPlan } from '@prisma/client';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
+import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -60,14 +61,9 @@ export class AdminController {
   @Patch('users/:id')
   @ApiOperation({ summary: 'Update a user (e.g. change plan or role)' })
   @ApiParam({ name: 'id', description: 'User UUID' })
-  async updateUser(
-    @Param('id') id: string,
-    @Body()
-    updateData: Partial<
-      Pick<Prisma.UserUpdateInput, 'name' | 'level' | 'plan' | 'role'>
-    >,
-  ) {
-    return this.adminService.updateUser(id, updateData);
+  @ApiBody({ type: UpdateAdminUserDto })
+  async updateUser(@Param('id') id: string, @Body() dto: UpdateAdminUserDto) {
+    return this.adminService.updateUser(id, dto);
   }
 
   @Delete('users/:id')

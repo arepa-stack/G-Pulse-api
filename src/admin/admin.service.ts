@@ -1,8 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, Role, SubscriptionPlan } from '@prisma/client';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
+import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
 
 @Injectable()
 export class AdminService {
@@ -70,12 +75,17 @@ export class AdminService {
     return user;
   }
 
-  async updateUser(
-    id: string,
-    data: Partial<
-      Pick<Prisma.UserUpdateInput, 'name' | 'level' | 'plan' | 'role'>
-    >,
-  ) {
+  async updateUser(id: string, dto: UpdateAdminUserDto) {
+    const hasField =
+      dto.name !== undefined ||
+      dto.level !== undefined ||
+      dto.plan !== undefined ||
+      dto.role !== undefined;
+
+    if (!hasField) {
+      throw new BadRequestException('At least one field is required');
+    }
+
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -83,7 +93,12 @@ export class AdminService {
 
     return this.prisma.user.update({
       where: { id },
-      data,
+      data: {
+        ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.level !== undefined && { level: dto.level }),
+        ...(dto.plan !== undefined && { plan: dto.plan }),
+        ...(dto.role !== undefined && { role: dto.role }),
+      },
     });
   }
 
