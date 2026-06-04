@@ -1,13 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { LogActivityDto } from './dto/log-activity.dto';
+import { PushService } from '../notifications/push.service';
+
+const STREAK_MILESTONES = new Set([7, 14, 30, 60, 90]);
 
 @Injectable()
 export class ProgressService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly pushService: PushService,
+  ) {}
 
   async logActivity(userId: string, data: LogActivityDto) {
     const { sets, routineId, ...activityData } = data;
+
+    const previousMaxByExercise = await this.getMaxWeightByExercise(
+      userId,
+      sets?.map((s) => s.exerciseId) ?? [],
+    );
 
     const log = await this.prisma.activityLog.create({
       data: {
@@ -31,18 +42,21 @@ export class ProgressService {
       },
     });
 
-    await this.updateStreak(userId);
+    const newStreak = await this.updateStreak(userId);
+    this.maybeNotifyStreakMilestone(userId, newStreak);
+    this.maybeNotifyPersonalRecords(userId, sets, previousMaxByExercise);
+
     return log;
   }
 
-  async updateStreak(userId: string) {
+  async updateStreak(userId: string): Promise<number> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) return;
+    if (!user) return 0;
 
     const lastActivity = await this.prisma.activityLog.findFirst({
       where: { userId },
       orderBy: { date: 'desc' },
-      skip: 1, // Get the activity BEFORE the one just logged
+      skip: 1,
     });
 
     let newStreak = user.trainingStreak;
@@ -61,7 +75,6 @@ export class ProgressService {
       } else if (diffDays > 1) {
         newStreak = 1;
       }
-      // If diffDays === 0, it means another activity was logged today, streak stays the same
     } else {
       newStreak = 1;
     }
@@ -70,6 +83,70 @@ export class ProgressService {
       where: { id: userId },
       data: { trainingStreak: newStreak },
     });
+
+    return newStreak;
+  }
+
+  private maybeNotifyStreakMilestone(userId: string, newStreak: number) {
+    if (!STREAK_MILESTONES.has(newStreak)) return;
+
+    this.pushService.sendToUserAsync(userId, {
+      title: '¡Racha de entrenamiento!',
+      body: `¡${newStreak} días seguidos entrenando! Sigue así.`,
+      data: { type: 'streak', streak: String(newStreak) },
+    });
+  }
+
+  private async getMaxWeightByExercise(
+    userId: string,
+    exerciseIds: string[],
+  ): Promise<Map<string, number>> {
+    const uniqueIds = [...new Set(exerciseIds)];
+    const map = new Map<string, number>();
+
+    if (uniqueIds.length === 0) return map;
+
+    const aggregates = await this.prisma.workoutSet.groupBy({
+      by: ['exerciseId'],
+      where: {
+        exerciseId: { in: uniqueIds },
+        weight: { not: null },
+        activityLog: { userId },
+      },
+      _max: { weight: true },
+    });
+
+    for (const row of aggregates) {
+      if (row._max.weight != null) {
+        map.set(row.exerciseId, row._max.weight);
+      }
+    }
+
+    return map;
+  }
+
+  private maybeNotifyPersonalRecords(
+    userId: string,
+    sets: LogActivityDto['sets'],
+    previousMaxByExercise: Map<string, number>,
+  ) {
+    if (!sets?.length) return;
+
+    const notified = new Set<string>();
+
+    for (const set of sets) {
+      if (set.weight == null || notified.has(set.exerciseId)) continue;
+
+      const previousMax = previousMaxByExercise.get(set.exerciseId) ?? 0;
+      if (set.weight > previousMax) {
+        notified.add(set.exerciseId);
+        this.pushService.sendToUserAsync(userId, {
+          title: '¡Nuevo récord personal!',
+          body: 'Has superado tu mejor marca en un ejercicio.',
+          data: { type: 'pr', exerciseId: set.exerciseId },
+        });
+      }
+    }
   }
 
   async getHistory(userId: string) {
@@ -116,7 +193,7 @@ export class ProgressService {
       },
     });
 
-    const prsMap = new Map<string, typeof sets[0]>();
+    const prsMap = new Map<string, (typeof sets)[0]>();
     for (const set of sets) {
       const existing = prsMap.get(set.exerciseId);
       if (!existing || (set.weight || 0) > (existing.weight || 0)) {
@@ -161,4 +238,3 @@ export class ProgressService {
     });
   }
 }
-

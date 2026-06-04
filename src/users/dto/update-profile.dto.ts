@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { SubscriptionPlan, UserLevel } from '@prisma/client';
 
@@ -17,4 +17,12 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsEnum(SubscriptionPlan)
   plan?: SubscriptionPlan;
+
+  @ApiPropertyOptional({
+    description: 'Enable or disable push notifications',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  pushEnabled?: boolean;
 }

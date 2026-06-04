@@ -18,6 +18,7 @@ import { ExerciseImagesModule } from './exercise-images/exercise-images.module';
 import { GoalsModule } from './goals/goals.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { MeasurementsModule } from './measurements/measurements.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { MeasurementsModule } from './measurements/measurements.module';
     GoalsModule,
     ScheduleModule,
     MeasurementsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
