@@ -61,10 +61,12 @@ Permitir al admin crear, editar y borrar entidades de catálogo (`Muscle`, `Cate
 
 ## 8. Criterios de aceptación
 
-- [ ] Crear músculo nuevo → 201.
-- [ ] Duplicar nombre → 409.
-- [ ] Borrar músculo en uso sin `force` → 409 con lista de ejercicios que lo usan.
-- [ ] Borrar con `?force=true` → desasocia y borra (en transacción).
+> Estado: músculos (Fibery #69) ✅ implementados con tests unitarios. Categorías (Fibery #70) pendientes.
+
+- [x] Crear músculo nuevo → 201.
+- [x] Duplicar nombre → 409.
+- [x] Borrar músculo en uso sin `force` → 409 con el conteo (`references`) de ejercicios que lo usan.
+- [x] Borrar con `?force=true` → desasocia y borra (en transacción).
 
 ## 9. Dependencias y riesgos
 
