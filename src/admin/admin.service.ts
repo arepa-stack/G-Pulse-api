@@ -11,6 +11,8 @@ import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
 import { CreateMuscleDto } from './dto/create-muscle.dto';
 import { UpdateMuscleDto } from './dto/update-muscle.dto';
+import { CreateCategoryDto } from './dto/create-category.dto';
+import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class AdminService {
@@ -368,5 +370,76 @@ export class AdminService {
     ]);
 
     return { message: 'Muscle deleted successfully' };
+  }
+
+  // ---- CATEGORIES (catálogo admin, F-14) ----
+
+  async findAllCategories() {
+    return this.prisma.category.findMany({
+      orderBy: { name: 'asc' },
+      include: { _count: { select: { exercises: true } } },
+    });
+  }
+
+  async createCategory(dto: CreateCategoryDto) {
+    try {
+      return await this.prisma.category.create({ data: dto });
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') {
+        throw new ConflictException(
+          `A category named "${dto.name}" already exists`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async updateCategory(id: string, dto: UpdateCategoryDto) {
+    const category = await this.prisma.category.findUnique({ where: { id } });
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${id} not found`);
+    }
+
+    try {
+      return await this.prisma.category.update({ where: { id }, data: dto });
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') {
+        throw new ConflictException(
+          `A category named "${dto.name}" already exists`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async deleteCategory(id: string, force = false) {
+    const category = await this.prisma.category.findUnique({
+      where: { id },
+      include: { _count: { select: { exercises: true } } },
+    });
+
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${id} not found`);
+    }
+
+    const references = category._count.exercises;
+
+    if (references > 0 && !force) {
+      throw new ConflictException({
+        message: `Category is referenced by ${references} exercise(s). Use ?force=true to detach and delete.`,
+        references,
+      });
+    }
+
+    // Deja categoryId=null en los ejercicios afectados y borra de forma atómica.
+    await this.prisma.$transaction([
+      this.prisma.category.update({
+        where: { id },
+        data: { exercises: { set: [] } },
+      }),
+      this.prisma.category.delete({ where: { id } }),
+    ]);
+
+    return { message: 'Category deleted successfully' };
   }
 }

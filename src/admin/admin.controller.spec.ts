@@ -29,6 +29,10 @@ describe('AdminController', () => {
             createMuscle: jest.fn(),
             updateMuscle: jest.fn(),
             deleteMuscle: jest.fn(),
+            findAllCategories: jest.fn(),
+            createCategory: jest.fn(),
+            updateCategory: jest.fn(),
+            deleteCategory: jest.fn(),
           },
         },
         {
@@ -108,6 +112,55 @@ describe('AdminController', () => {
       await controller.deleteMuscle('m1', undefined);
 
       expect(service.deleteMuscle).toHaveBeenCalledWith('m1', false);
+    });
+  });
+
+  // ---- CATEGORIES (F-14 / Fibery #70) ----
+
+  describe('categories', () => {
+    it('getCategories delegates to adminService.findAllCategories', async () => {
+      const service = module.get(AdminService);
+      const expected = [{ id: 'c1', name: 'Strength' }];
+      (service.findAllCategories as jest.Mock).mockResolvedValue(expected);
+
+      const result = await controller.getCategories();
+
+      expect(service.findAllCategories).toHaveBeenCalled();
+      expect(result).toEqual(expected);
+    });
+
+    it('createCategory delegates to adminService.createCategory with the dto', async () => {
+      const service = module.get(AdminService);
+      const dto = { name: 'Plyometrics' };
+      const expected = { id: 'c9', ...dto };
+      (service.createCategory as jest.Mock).mockResolvedValue(expected);
+
+      const result = await controller.createCategory(dto);
+
+      expect(service.createCategory).toHaveBeenCalledWith(dto);
+      expect(result).toEqual(expected);
+    });
+
+    it('updateCategory delegates to adminService.updateCategory with id and dto', async () => {
+      const service = module.get(AdminService);
+      const dto = { name: 'Cardio' };
+      await controller.updateCategory('c1', dto);
+
+      expect(service.updateCategory).toHaveBeenCalledWith('c1', dto);
+    });
+
+    it('deleteCategory passes force=true when the query param is "true"', async () => {
+      const service = module.get(AdminService);
+      await controller.deleteCategory('c1', 'true');
+
+      expect(service.deleteCategory).toHaveBeenCalledWith('c1', true);
+    });
+
+    it('deleteCategory passes force=false when the query param is absent', async () => {
+      const service = module.get(AdminService);
+      await controller.deleteCategory('c1', undefined);
+
+      expect(service.deleteCategory).toHaveBeenCalledWith('c1', false);
     });
   });
 });

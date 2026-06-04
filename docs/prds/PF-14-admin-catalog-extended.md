@@ -61,7 +61,7 @@ Permitir al admin crear, editar y borrar entidades de catálogo (`Muscle`, `Cate
 
 ## 8. Criterios de aceptación
 
-> Estado: músculos (Fibery #69) ✅ implementados con tests unitarios. Categorías (Fibery #70) pendientes.
+> Estado: músculos (Fibery #69) ✅ y categorías (Fibery #70) ✅ implementados con tests unitarios.
 
 - [x] Crear músculo nuevo → 201.
 - [x] Duplicar nombre → 409.
