@@ -290,7 +290,7 @@ export class RoutinesService {
       throw new NotFoundException('Routine not found');
     }
     if (!routine.isPublic) {
-      throw new ForbiddenException('Only public routines can be liked');
+      throw new ForbiddenException('Only public routines can be liked or favorited');
     }
 
     return routine;
@@ -334,6 +334,25 @@ export class RoutinesService {
           data: { likes: 0 },
         });
       }
+    });
+  }
+
+  async favorite(userId: string, routineId: string) {
+    await this.getPublicRoutineOrThrow(routineId);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.userFavorite.createMany({
+        data: [{ userId, routineId }],
+        skipDuplicates: true,
+      });
+    });
+  }
+
+  async unfavorite(userId: string, routineId: string) {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.userFavorite.deleteMany({
+        where: { userId, routineId },
+      });
     });
   }
 }

@@ -40,12 +40,14 @@ describe('ExercisesController', () => {
       mockExercisesService.findAll.mockResolvedValue(mockResult);
 
       const query: FindAllExercisesDto = {};
-      const result = await controller.findAll(query);
+      const mockReq = { user: undefined };
+      const result = await controller.findAll(mockReq, query);
 
       expect(service.findAll).toHaveBeenCalledWith({
         skip: 0,
         take: 20,
         where: {},
+        user: undefined,
       });
       expect(result).toEqual(mockResult);
     });
@@ -61,8 +63,8 @@ describe('ExercisesController', () => {
         page: '2',
         search: 'squat',
       };
-
-      const result = await controller.findAll(query);
+      const mockReq = { user: undefined };
+      const result = await controller.findAll(mockReq, query);
 
       expect(service.findAll).toHaveBeenCalledWith({
         skip: 10, // (2 - 1) * 10
@@ -75,6 +77,7 @@ describe('ExercisesController', () => {
           ],
         },
         search: 'squat',
+        user: undefined,
       });
       expect(result).toEqual(mockResult);
     });
