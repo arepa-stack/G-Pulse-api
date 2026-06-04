@@ -1,16 +1,12 @@
-import { Injectable, Optional } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionPlan } from '@prisma/client';
-import { PushService } from '../notifications/push.service';
 
 const MS_PER_DAY = 86400000;
 
 @Injectable()
 export class SubscriptionsService {
-  constructor(
-    private prisma: PrismaService,
-    @Optional() private readonly pushService?: PushService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async createSubscription(userId: string, plan: SubscriptionPlan) {
     const startDate = new Date();
@@ -73,17 +69,10 @@ export class SubscriptionsService {
       return { message: 'No active subscription to cancel' };
     }
 
-    const now = new Date();
     await this.prisma.subscription.update({
       where: { userId },
-      data: { isActive: false, endDate: now },
+      data: { isActive: false, endDate: new Date() },
     });
-
-    const daysRemaining = Math.max(
-      0,
-      Math.ceil((now.getTime() - Date.now()) / MS_PER_DAY),
-    );
-    this.pushService?.notifySubscriptionCanceled(userId, daysRemaining);
 
     return {
       message:

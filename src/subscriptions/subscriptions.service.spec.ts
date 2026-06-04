@@ -1,15 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SubscriptionsService } from './subscriptions.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { PushService } from '../notifications/push.service';
 import { SubscriptionPlan } from '@prisma/client';
 
 describe('SubscriptionsService', () => {
   let service: SubscriptionsService;
-
-  const mockPushService = {
-    notifySubscriptionCanceled: jest.fn(),
-  };
 
   const mockPrisma = {
     user: { findUnique: jest.fn(), update: jest.fn() },
@@ -25,7 +20,6 @@ describe('SubscriptionsService', () => {
       providers: [
         SubscriptionsService,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: PushService, useValue: mockPushService },
       ],
     }).compile();
 
@@ -85,7 +79,7 @@ describe('SubscriptionsService', () => {
       expect(mockPrisma.subscription.update).not.toHaveBeenCalled();
     });
 
-    it('deactivates subscription and notifies push', async () => {
+    it('deactivates subscription without changing user plan', async () => {
       mockPrisma.subscription.findUnique.mockResolvedValue({
         isActive: true,
         endDate: new Date(Date.now() + 86400000),
@@ -98,10 +92,6 @@ describe('SubscriptionsService', () => {
         where: { userId: 'u1' },
         data: { isActive: false, endDate: expect.any(Date) },
       });
-      expect(mockPushService.notifySubscriptionCanceled).toHaveBeenCalledWith(
-        'u1',
-        0,
-      );
       expect(result.message).toContain('Subscription canceled');
     });
   });
