@@ -34,6 +34,7 @@ describe('RoutinesService', () => {
     },
     userFavorite: {
       deleteMany: jest.fn(),
+      createMany: jest.fn(),
     },
     $transaction: mockTransaction,
     $queryRaw: jest.fn(),
@@ -407,6 +408,72 @@ describe('RoutinesService', () => {
       await service.unlike('u1', 'r1');
 
       expect(txUpdate).not.toHaveBeenCalled();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // favorite
+  // -------------------------------------------------------------------------
+  describe('favorite', () => {
+    it('should throw NotFoundException when routine does not exist', async () => {
+      mockPrismaService.routine.findUnique.mockResolvedValue(null);
+
+      await expect(service.favorite('u1', 'nope')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
+
+    it('should throw ForbiddenException when favoriting a private routine', async () => {
+      mockPrismaService.routine.findUnique.mockResolvedValue({
+        isPublic: false,
+      });
+
+      await expect(service.favorite('u1', 'r1')).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(mockTransaction).not.toHaveBeenCalled();
+    });
+
+    it('should call createMany on userFavorite', async () => {
+      mockPrismaService.routine.findUnique.mockResolvedValue({
+        isPublic: true,
+      });
+      const txCreateMany = jest.fn();
+      mockTransaction.mockImplementation(
+        (fn: (tx: unknown) => Promise<unknown>) =>
+          fn({
+            userFavorite: { createMany: txCreateMany },
+          }),
+      );
+
+      await service.favorite('u1', 'r1');
+
+      expect(txCreateMany).toHaveBeenCalledWith({
+        data: [{ userId: 'u1', routineId: 'r1' }],
+        skipDuplicates: true,
+      });
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // unfavorite
+  // -------------------------------------------------------------------------
+  describe('unfavorite', () => {
+    it('should call deleteMany on userFavorite', async () => {
+      const txDeleteMany = jest.fn();
+      mockTransaction.mockImplementation(
+        (fn: (tx: unknown) => Promise<unknown>) =>
+          fn({
+            userFavorite: { deleteMany: txDeleteMany },
+          }),
+      );
+
+      await service.unfavorite('u1', 'r1');
+
+      expect(txDeleteMany).toHaveBeenCalledWith({
+        where: { userId: 'u1', routineId: 'r1' },
+      });
     });
   });
 });
