@@ -27,12 +27,15 @@ jobs:
           script: |
             set -e
             cd /orgs/g-pulse/G-Pulse-api
-            git pull origin master
+            git fetch origin master
+            git reset --hard origin/master
             docker rm -f g-pulse-api || true
             docker build -t g-pulse-api .
             docker run -d \
               --name g-pulse-api \
               --restart unless-stopped \
               --env-file ./.env \
-              -p 127.0.0.1:9000:9000 \
+              -p 127.0.0.1:9000:3000 \
               g-pulse-api
+            sleep 5
+            docker exec g-pulse-api npx prisma migrate deploy
