@@ -15,6 +15,7 @@ import { MailModule } from './mail/mail.module';
 import { DictionariesModule } from './dictionaries/dictionaries.module';
 import { StorageModule } from './storage/storage.module';
 import { ExerciseImagesModule } from './exercise-images/exercise-images.module';
+import { GoalsModule } from './goals/goals.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ExerciseImagesModule } from './exercise-images/exercise-images.module';
     DictionariesModule,
     StorageModule,
     ExerciseImagesModule,
+    GoalsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

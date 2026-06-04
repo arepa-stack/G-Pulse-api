@@ -1,0 +1,24 @@
+-- CreateEnum
+CREATE TYPE "GoalType" AS ENUM ('WEIGHT', 'WORKOUTS_PER_WEEK', 'CALORIES_BURN', 'DURATION_MINUTES');
+
+-- CreateEnum
+CREATE TYPE "GoalStatus" AS ENUM ('ACTIVE', 'ACHIEVED', 'ABANDONED');
+
+-- CreateTable
+CREATE TABLE "Goal" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "type" "GoalType" NOT NULL,
+    "targetValue" DOUBLE PRECISION NOT NULL,
+    "currentValue" DOUBLE PRECISION NOT NULL DEFAULT 0.0,
+    "startDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "endDate" TIMESTAMP(3),
+    "status" "GoalStatus" NOT NULL DEFAULT 'ACTIVE',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Goal_pkey" PRIMARY KEY ("id")
+);
+
+-- AddForeignKey
+ALTER TABLE "Goal" ADD CONSTRAINT "Goal_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
