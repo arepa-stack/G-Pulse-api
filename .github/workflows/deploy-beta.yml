@@ -1,10 +1,12 @@
 name: Deploy Beta
 
 on:
-  push:
-    branches:
-      - master
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: 'master'
 
 concurrency:
   group: deploy-beta
@@ -14,6 +16,7 @@ jobs:
   deploy:
     name: Deploy to Beta
     runs-on: ubuntu-latest
+    if: github.actor == 'jholbert-ri' || github.actor == 'jholbert1'
 
     steps:
       - name: Deploy via SSH
@@ -27,8 +30,8 @@ jobs:
           script: |
             set -e
             cd /orgs/g-pulse/G-Pulse-api
-            git fetch origin master
-            git reset --hard origin/master
+            git fetch origin ${{ github.event.inputs.branch }}
+            git reset --hard origin/${{ github.event.inputs.branch }}
             docker rm -f g-pulse-api || true
             docker build -t g-pulse-api .
             docker run -d \
