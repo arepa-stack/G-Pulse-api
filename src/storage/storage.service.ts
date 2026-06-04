@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import * as WebSocket from 'ws';
 
 @Injectable()
 export class StorageService {
@@ -18,7 +19,14 @@ export class StorageService {
       );
     }
 
-    this.supabase = createClient(url, key);
+    this.supabase = createClient(url, key, {
+      auth: {
+        persistSession: false,
+      },
+      realtime: {
+        transport: WebSocket as any,
+      },
+    });
   }
 
   async uploadFile(file: Express.Multer.File, path: string): Promise<string> {
