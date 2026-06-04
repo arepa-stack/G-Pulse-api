@@ -174,7 +174,22 @@ export class RoutinesService {
       where: { id },
       include: {
         exercises: {
-          include: { exercise: { include: { media: true } } },
+          include: {
+            exercise: {
+              include: {
+                media: {
+                  where: {
+                    isPaused: false,
+                    OR: [
+                      { userId: null },
+                      { isPublic: true },
+                      { userId },
+                    ],
+                  },
+                },
+              },
+            },
+          },
           orderBy: { order: 'asc' },
         },
       },

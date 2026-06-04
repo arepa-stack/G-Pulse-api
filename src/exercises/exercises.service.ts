@@ -17,8 +17,9 @@ export class ExercisesService {
     where?: Prisma.ExerciseWhereInput;
     orderBy?: Prisma.ExerciseOrderByWithRelationInput;
     search?: string;
+    user?: { id: string; role: string };
   }) {
-    const { skip, take, cursor, where = {}, orderBy, search } = params;
+    const { skip, take, cursor, where = {}, orderBy, search, user } = params;
 
     if (search) {
       const matchingExercises = await this.prisma.$queryRaw<{ id: string }[]>`
@@ -32,6 +33,20 @@ export class ExercisesService {
       where.id = { in: ids };
     }
 
+    const mediaFilter =
+      user?.role === 'ADMIN'
+        ? true
+        : {
+            where: {
+              isPaused: false,
+              OR: [
+                { userId: null },
+                { isPublic: true },
+                ...(user?.id ? [{ userId: user.id }] : []),
+              ],
+            },
+          };
+
     return this.prisma.exercise.findMany({
       skip,
       take,
@@ -39,7 +54,7 @@ export class ExercisesService {
       where,
       orderBy,
       include: {
-        media: true,
+        media: mediaFilter,
         primaryMuscles: true,
         secondaryMuscles: true,
         category: true,
@@ -47,10 +62,24 @@ export class ExercisesService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, user?: { id: string; role: string }) {
+    const mediaFilter =
+      user?.role === 'ADMIN'
+        ? true
+        : {
+            where: {
+              isPaused: false,
+              OR: [
+                { userId: null },
+                { isPublic: true },
+                ...(user?.id ? [{ userId: user.id }] : []),
+              ],
+            },
+          };
+
     return this.prisma.exercise.findUnique({
       where: { id },
-      include: { media: true },
+      include: { media: mediaFilter },
     });
   }
 }

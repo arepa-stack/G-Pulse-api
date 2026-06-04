@@ -13,6 +13,8 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { AdminModule } from './admin/admin.module';
 import { MailModule } from './mail/mail.module';
 import { DictionariesModule } from './dictionaries/dictionaries.module';
+import { StorageModule } from './storage/storage.module';
+import { ExerciseImagesModule } from './exercise-images/exercise-images.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { DictionariesModule } from './dictionaries/dictionaries.module';
     AdminModule,
     MailModule,
     DictionariesModule,
+    StorageModule,
+    ExerciseImagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

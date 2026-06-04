@@ -27,11 +27,12 @@ model User {
   plan         SubscriptionPlan @default(BASIC)
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
-  activityLogs ActivityLog[]
-  routines     Routine[]
-  subscription Subscription?
-  favorites    UserFavorite[]
-  routineLikes RoutineLike[]
+  activityLogs  ActivityLog[]
+  routines      Routine[]
+  subscription  Subscription?
+  favorites     UserFavorite[]
+  routineLikes  RoutineLike[]
+  exerciseMedia ExerciseMedia[]
 }
 
 model Exercise {
@@ -79,6 +80,12 @@ model ExerciseMedia {
   type       MediaType @default(IMAGE)
   exerciseId String
   exercise   Exercise  @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  isPublic   Boolean   @default(false)
+  isPaused   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now()) @updatedAt
 }
 
 enum MediaType {

@@ -155,7 +155,18 @@ export class GeminiService {
               ],
             },
             take: 5,
-            include: { media: true },
+            include: {
+              media: {
+                where: {
+                  isPaused: false,
+                  OR: [
+                    { userId: null },
+                    { isPublic: true },
+                    ...(userId ? [{ userId }] : []),
+                  ],
+                },
+              },
+            },
           });
 
           if (exercises.length > 0) {
