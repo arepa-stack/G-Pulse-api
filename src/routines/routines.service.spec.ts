@@ -35,6 +35,9 @@ describe('RoutinesService', () => {
     userFavorite: {
       deleteMany: jest.fn(),
     },
+    routineSchedule: {
+      findFirst: jest.fn(),
+    },
     $transaction: mockTransaction,
     $queryRaw: jest.fn(),
   };
@@ -224,6 +227,38 @@ describe('RoutinesService', () => {
       await expect(service.findOneForUser('u1', 'not-found')).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // getToday
+  // -------------------------------------------------------------------------
+  describe('getToday', () => {
+    it('should return null if there is no routine scheduled for today', async () => {
+      mockPrismaService.routineSchedule.findFirst.mockResolvedValue(null);
+
+      const result = await service.getToday('u1');
+
+      expect(result).toBeNull();
+      expect(mockPrismaService.routineSchedule.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: 'u1',
+            enabled: true,
+          }),
+        }),
+      );
+    });
+
+    it('should return the scheduled routine if it exists and is enabled', async () => {
+      const mockRoutine = { id: 'r1', name: 'Leg Day', exercises: [] };
+      mockPrismaService.routineSchedule.findFirst.mockResolvedValue({
+        routine: mockRoutine,
+      });
+
+      const result = await service.getToday('u1');
+
+      expect(result).toEqual(mockRoutine);
     });
   });
 
