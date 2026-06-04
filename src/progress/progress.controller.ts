@@ -7,7 +7,14 @@ import {
   Request,
   Param,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+  ApiBody,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { ProgressService } from './progress.service';
 import { LogActivityDto } from './dto/log-activity.dto';
@@ -21,6 +28,8 @@ export class ProgressController {
 
   @Post('log')
   @ApiOperation({ summary: 'Log a completed workout activity' })
+  @ApiBody({ type: LogActivityDto })
+  @ApiOkResponse({ description: 'Activity log created' })
   async logActivity(@Request() req, @Body() logData: LogActivityDto) {
     return this.progressService.logActivity(req.user.id, logData);
   }
@@ -39,6 +48,7 @@ export class ProgressController {
 
   @Get('exercise/:id')
   @ApiOperation({ summary: 'Get history of a specific exercise' })
+  @ApiParam({ name: 'id', description: 'Exercise UUID' })
   async getExerciseHistory(@Request() req, @Param('id') id: string) {
     return this.progressService.getExerciseHistory(req.user.id, id);
   }

@@ -7,7 +7,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+  ApiBody,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -22,6 +28,7 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
+  @ApiBody({ type: RegisterDto })
   async register(@Body() userData: RegisterDto) {
     return this.authService.register(
       userData.email,
@@ -32,6 +39,7 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({ summary: 'Login with email and password' })
+  @ApiBody({ type: LoginDto })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto.email, loginDto.password);
   }
@@ -40,6 +48,7 @@ export class AuthController {
   @ApiOperation({
     summary: 'Login with Google (Firebase ID token from client)',
   })
+  @ApiBody({ type: GoogleLoginDto })
   async google(@Body() body: GoogleLoginDto) {
     return this.authService.googleLogin(body.idToken);
   }
