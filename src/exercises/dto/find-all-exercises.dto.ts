@@ -2,10 +2,15 @@ import { IsOptional, IsString, IsNumberString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class FindAllExercisesDto {
-  @ApiPropertyOptional({ description: 'Muscle focused' })
+  @ApiPropertyOptional({ description: 'Muscle focused (comma-separated list of body parts)' })
   @IsOptional()
   @IsString()
   muscle?: string;
+
+  @ApiPropertyOptional({ description: 'Category ID' })
+  @IsOptional()
+  @IsString()
+  category?: string;
 
   @ApiPropertyOptional({ description: 'Exercise difficulty' })
   @IsOptional()

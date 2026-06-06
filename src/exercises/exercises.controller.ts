@@ -20,7 +20,7 @@ export class ExercisesController {
   @Get()
   @ApiOperation({ summary: 'Get all exercises with filters and pagination' })
   async findAll(@Request() req: any, @Query() query: FindAllExercisesDto = {}) {
-    const { muscle, difficulty, limit, page, search } = query;
+    const { muscle, category, difficulty, limit, page, search } = query;
     const take = limit ? parseInt(limit) : 20;
     const skip = page ? (parseInt(page) - 1) * take : 0;
 
@@ -30,11 +30,16 @@ export class ExercisesController {
       where.difficulty = difficulty.toLowerCase();
     }
 
+    if (category) {
+      where.categoryId = category;
+    }
+
     if (muscle) {
-      // Check both primary and secondary muscles
+      // Handle comma-separated list of muscles
+      const muscleList = muscle.split(',').map((m) => m.trim().toLowerCase());
       where.OR = [
-        { primaryMuscles: { some: { name: muscle.toLowerCase() } } },
-        { secondaryMuscles: { some: { name: muscle.toLowerCase() } } },
+        { primaryMuscles: { some: { name: { in: muscleList } } } },
+        { secondaryMuscles: { some: { name: { in: muscleList } } } },
       ];
     }
 
