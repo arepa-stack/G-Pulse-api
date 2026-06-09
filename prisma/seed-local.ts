@@ -1,13 +1,11 @@
-import { PrismaClient, MediaType } from '@prisma/client';
+import { PrismaClient, MediaType, Prisma } from '@prisma/client';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const prisma = new PrismaClient();
 
 const GITHUB_BASE_URL =
   'https://raw.githubusercontent.com/arepa-stack/exercises-dataset/main/';
-const EXERCISES_JSON_URL =
-  'https://raw.githubusercontent.com/arepa-stack/exercises-dataset/main/data/exercises.json';
-const DICTIONARIES_JSON_URL =
-  'https://raw.githubusercontent.com/arepa-stack/exercises-dataset/main/data/dictionaries.json';
 
 interface NewExternalExercise {
   id: string;
@@ -37,36 +35,44 @@ interface NewExternalExercise {
   target: string;
   image: string;
   gif_url: string;
+  thumbnail?: string | null;
+  images_leip?: string[] | null;
 }
 
 async function main() {
-  console.log('Starting Seed for the new dataset structure (ES)...');
+  console.log('Starting Seed for the new dataset structure (ES) from local files...');
   
   await seedDictionaries();
 
-  console.log(`Fetching exercises from GitHub...`);
+  console.log(`Reading exercises from local dataset...`);
 
-  const response = await fetch(EXERCISES_JSON_URL);
-  if (!response.ok) {
-    console.error(
-      `Failed to fetch exercises.json: ${response.status} ${response.statusText}`,
-    );
+  const exercisesPath = path.resolve(__dirname, '../../dataSet/exercises-dataset/data/exercises.json');
+  if (!fs.existsSync(exercisesPath)) {
+    console.error(`Local exercises.json not found at: ${exercisesPath}`);
     process.exit(1);
   }
 
-  const exercises: NewExternalExercise[] = (await response.json()) as NewExternalExercise[];
+  const exercises: NewExternalExercise[] = JSON.parse(fs.readFileSync(exercisesPath, 'utf8')) as NewExternalExercise[];
   console.log(`Found ${exercises.length} exercises.`);
 
   let createdCount = 0;
+  const categoryCache = new Map<string, any>();
+  const muscleCache = new Map<string, any>();
 
   for (const ex of exercises) {
     // 1. Upsert Category
     const categoryValid = ex.category || 'uncategorized';
-    const category = await prisma.category.upsert({
-      where: { name: categoryValid },
-      update: {},
-      create: { name: categoryValid },
-    });
+    let category;
+    if (categoryCache.has(categoryValid)) {
+      category = categoryCache.get(categoryValid);
+    } else {
+      category = await prisma.category.upsert({
+        where: { name: categoryValid },
+        update: {},
+        create: { name: categoryValid },
+      });
+      categoryCache.set(categoryValid, category);
+    }
 
     // 2. Upsert Muscles
     const primaryMusclesArray = [ex.target];
@@ -80,12 +86,17 @@ async function main() {
     const muscleRecords: Record<string, any> = {};
     for (const mName of allMuscles) {
       if (!mName) continue;
-      const m = await prisma.muscle.upsert({
-        where: { name: mName },
-        update: {},
-        create: { name: mName },
-      });
-      muscleRecords[mName] = m;
+      if (muscleCache.has(mName)) {
+        muscleRecords[mName] = muscleCache.get(mName);
+      } else {
+        const m = await prisma.muscle.upsert({
+          where: { name: mName },
+          update: {},
+          create: { name: mName },
+        });
+        muscleCache.set(mName, m);
+        muscleRecords[mName] = m;
+      }
     }
 
     // 3. Handle images and GIFs as ExerciseMedia
@@ -103,6 +114,8 @@ async function main() {
       instructions: ex.instruction_steps,
       categoryId: category.id,
       description: ex.instructions,
+      thumbnail: ex.thumbnail ?? null,
+      images_leip: ex.images_leip ? (ex.images_leip as any) : Prisma.DbNull,
     };
 
     try {
@@ -157,16 +170,14 @@ async function main() {
 }
 
 async function seedDictionaries() {
-  console.log('Fetching dictionaries from GitHub...');
-  const response = await fetch(DICTIONARIES_JSON_URL);
-  if (!response.ok) {
-    console.error(
-      `Failed to fetch dictionaries.json: ${response.status} ${response.statusText}`,
-    );
+  console.log('Reading dictionaries from local dataset...');
+  const dictPath = path.resolve(__dirname, '../../dataSet/exercises-dataset/data/dictionaries.json');
+  if (!fs.existsSync(dictPath)) {
+    console.error(`Local dictionaries.json not found at: ${dictPath}`);
     process.exit(1);
   }
 
-  const dictData = (await response.json()) as Record<string, Record<string, Record<string, string>>>;
+  const dictData = JSON.parse(fs.readFileSync(dictPath, 'utf8')) as Record<string, Record<string, Record<string, string>>>;
   console.log('Seeding dictionaries...');
 
   let count = 0;

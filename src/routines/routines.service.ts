@@ -177,6 +177,7 @@ export class RoutinesService {
           include: {
             exercise: {
               include: {
+                category: true,
                 media: {
                   where: {
                     isPaused: false,

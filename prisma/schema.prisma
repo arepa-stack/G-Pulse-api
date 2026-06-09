@@ -82,6 +82,8 @@ model Exercise {
   mechanic     String? // compound, isolation
   force        String? // push, pull, static
   equipment    String?
+  thumbnail    String?
+  images_leip  Json?
 
   // Relations
   categoryId String?

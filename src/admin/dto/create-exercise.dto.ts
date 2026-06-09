@@ -67,4 +67,19 @@ export class CreateExerciseDto {
   @IsArray()
   @IsUrl({}, { each: true })
   imageUrls?: string[];
+
+  @ApiPropertyOptional({ example: 'https://raw.githubusercontent.com/leip1493/g-pulse-exercise-db/main/exercises/3_4_Sit-Up/0.jpg' })
+  @IsOptional()
+  @IsString()
+  @IsUrl()
+  thumbnail?: string;
+
+  @ApiPropertyOptional({
+    description: 'Arreglo de URLs de imágenes LEIP',
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUrl({}, { each: true })
+  images_leip?: string[];
 }
