@@ -42,7 +42,9 @@ export class UsersController {
   @ApiOperation({ summary: 'Update user profile' })
   @ApiBody({ type: UpdateProfileDto })
   async updateProfile(@Request() req, @Body() updateData: UpdateProfileDto) {
-    return this.usersService.update(req.user.id, updateData);
+    const user = await this.usersService.update(req.user.id, updateData);
+    const { password: _password, ...publicUser } = user;
+    return publicUser;
   }
 
   @Get('stats')
