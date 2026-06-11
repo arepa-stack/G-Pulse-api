@@ -19,6 +19,7 @@ import { GoalsModule } from './goals/goals.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { MeasurementsModule } from './measurements/measurements.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { FeedModule } from './feed/feed.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     ScheduleModule,
     MeasurementsModule,
     NotificationsModule,
+    FeedModule,
   ],
   controllers: [AppController],
   providers: [AppService],

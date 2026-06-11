@@ -173,6 +173,12 @@ export class RoutinesService {
     const routine = await this.prisma.routine.findUnique({
       where: { id },
       include: {
+        creator: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         exercises: {
           include: {
             exercise: {

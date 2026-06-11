@@ -174,7 +174,7 @@ export class AuthService {
     }
 
     const hashedNew = await bcrypt.hash(newPassword, this.bcryptRounds);
-    await this.usersService.update(userId, { password: hashedNew });
+    await this.usersService.updateByEmail(user.email, { password: hashedNew });
 
     await this.mailService.sendPasswordChanged(
       user.email,

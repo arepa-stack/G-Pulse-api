@@ -3,8 +3,10 @@ import {
   Post,
   Delete,
   Patch,
+  Get,
   Body,
   Param,
+  Query,
   Req,
   UploadedFile,
   UseGuards,
@@ -29,6 +31,7 @@ import { UpdateMediaStatusDto } from './dto/update-media-status.dto';
 import { RolesGuard } from '../auth/roles/roles.guard';
 import { Roles } from '../auth/roles/roles.decorator';
 import { Role } from '@prisma/client';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 interface AuthRequest extends Request {
   user: { id: string; email: string; role: Role };
@@ -65,6 +68,10 @@ export class ExerciseImagesController {
           description: 'Whether the uploaded media is visible to everyone',
           default: false,
         },
+        caption: {
+          type: 'string',
+          description: 'Optional caption for the media',
+        },
       },
       required: ['file', 'exerciseId'],
     },
@@ -75,6 +82,34 @@ export class ExerciseImagesController {
     @Body() dto: UploadExerciseMediaDto,
   ) {
     return this.exerciseImagesService.uploadMedia(req.user.id, file, dto);
+  }
+
+  @Get('by-user/:userId')
+  @ApiOperation({ summary: 'List public exercise media uploaded by a user' })
+  @ApiParam({ name: 'userId', description: 'User UUID' })
+  async getPublicMediaByUser(
+    @Param('userId') userId: string,
+    @Query() query: PaginationDto,
+  ) {
+    return this.exerciseImagesService.getPublicMediaByUser(userId, query);
+  }
+
+  @Post(':id/like')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Like public exercise media (idempotent)' })
+  @ApiParam({ name: 'id', description: 'Exercise media UUID' })
+  @ApiNoContentResponse()
+  async like(@Req() req: AuthRequest, @Param('id') id: string) {
+    return this.exerciseImagesService.like(req.user.id, id);
+  }
+
+  @Delete(':id/like')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remove a like from exercise media (idempotent)' })
+  @ApiParam({ name: 'id', description: 'Exercise media UUID' })
+  @ApiNoContentResponse()
+  async unlike(@Req() req: AuthRequest, @Param('id') id: string) {
+    return this.exerciseImagesService.unlike(req.user.id, id);
   }
 
   @Delete(':id')
