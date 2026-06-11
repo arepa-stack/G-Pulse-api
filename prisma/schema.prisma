@@ -134,7 +134,8 @@ model ExerciseMedia {
   caption    String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @default(now()) @updatedAt
-  likedBy    MediaLike[]
+  likedBy          MediaLike[]
+  routineExercises RoutineExercise[]
 }
 
 enum MediaType {
@@ -161,15 +162,17 @@ model Routine {
 }
 
 model RoutineExercise {
-  id         String   @id @default(uuid())
+  id         String         @id @default(uuid())
   routineId  String
   exerciseId String
+  mediaId    String?
   order      Int
   sets       Int?
   reps       Int?
   duration   Int?
-  exercise   Exercise @relation(fields: [exerciseId], references: [id])
-  routine    Routine  @relation(fields: [routineId], references: [id])
+  exercise   Exercise       @relation(fields: [exerciseId], references: [id])
+  routine    Routine        @relation(fields: [routineId], references: [id])
+  media      ExerciseMedia? @relation(fields: [mediaId], references: [id], onDelete: SetNull)
 }
 
 model UserFavorite {

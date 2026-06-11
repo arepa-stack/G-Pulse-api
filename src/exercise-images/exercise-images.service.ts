@@ -76,6 +76,42 @@ export class ExerciseImagesService {
     });
   }
 
+  async getMyMediaByExercise(userId: string, exerciseId: string, q: PaginationDto) {
+    const take = q.limit ? parseInt(q.limit) : 20;
+    const skip = q.page ? (parseInt(q.page) - 1) * take : 0;
+
+    const where = {
+      userId,
+      exerciseId,
+      isPaused: false,
+    };
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.exerciseMedia.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          exercise: {
+            select: { id: true, name: true, thumbnail: true },
+          },
+        },
+      }),
+      this.prisma.exerciseMedia.count({ where }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page: q.page ? +q.page : 1,
+        limit: take,
+        totalPages: Math.ceil(total / take),
+      },
+    };
+  }
+
   async getPublicMediaByUser(userId: string, q: PaginationDto) {
     const take = q.limit ? parseInt(q.limit) : 20;
     const skip = q.page ? (parseInt(q.page) - 1) * take : 0;

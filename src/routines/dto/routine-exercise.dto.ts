@@ -1,11 +1,27 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RoutineExerciseDto {
-  @ApiProperty({ description: 'The name of the exercise' })
+  @ApiPropertyOptional({
+    description: 'Exercise UUID (preferred for personalized routines)',
+  })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  exerciseName: string;
+  exerciseId?: string;
+
+  @ApiPropertyOptional({
+    description: 'The name of the exercise (fallback when exerciseId is omitted)',
+  })
+  @IsOptional()
+  @IsString()
+  exerciseName?: string;
+
+  @ApiPropertyOptional({
+    description: 'User-uploaded ExerciseMedia UUID linked to this routine slot',
+  })
+  @IsOptional()
+  @IsString()
+  mediaId?: string;
 
   @ApiPropertyOptional({ description: 'Number of sets', default: 3 })
   @IsOptional()

@@ -84,6 +84,21 @@ export class ExerciseImagesController {
     return this.exerciseImagesService.uploadMedia(req.user.id, file, dto);
   }
 
+  @Get('my/:exerciseId')
+  @ApiOperation({ summary: 'List current user media for a specific exercise' })
+  @ApiParam({ name: 'exerciseId', description: 'Exercise UUID' })
+  async getMyMediaByExercise(
+    @Req() req: AuthRequest,
+    @Param('exerciseId') exerciseId: string,
+    @Query() query: PaginationDto,
+  ) {
+    return this.exerciseImagesService.getMyMediaByExercise(
+      req.user.id,
+      exerciseId,
+      query,
+    );
+  }
+
   @Get('by-user/:userId')
   @ApiOperation({ summary: 'List public exercise media uploaded by a user' })
   @ApiParam({ name: 'userId', description: 'User UUID' })

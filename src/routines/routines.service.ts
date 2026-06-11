@@ -4,12 +4,19 @@ import {
   HttpStatus,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { GeminiService } from '../gemini/gemini.service';
 import { FindAllRoutinesDto } from './dto/find-all-routines.dto';
 import { UpdateRoutineDto } from './dto/update-routine.dto';
+import { RoutineExerciseDto } from './dto/routine-exercise.dto';
+
+type RoutineExerciseClient = Pick<
+  PrismaService,
+  'exercise' | 'exerciseMedia' | '$queryRaw'
+>;
 
 @Injectable()
 export class RoutinesService {
@@ -17,6 +24,114 @@ export class RoutinesService {
     private readonly prisma: PrismaService,
     private readonly geminiService: GeminiService,
   ) {}
+
+  private readonly routineExerciseInclude = {
+    media: true,
+    exercise: {
+      include: {
+        category: true,
+        media: {
+          where: {
+            isPaused: false,
+          },
+        },
+      },
+    },
+  } as const;
+
+  private async resolveExercise(
+    client: RoutineExerciseClient,
+    exData: RoutineExerciseDto,
+  ) {
+    if (exData.exerciseId) {
+      return client.exercise.findUnique({ where: { id: exData.exerciseId } });
+    }
+
+    if (!exData.exerciseName) {
+      return null;
+    }
+
+    const matches = await client.$queryRaw<{ id: string }[]>`
+      SELECT id FROM "Exercise"
+      WHERE "name"->>'en' ILIKE ${exData.exerciseName}
+         OR "name"->>'es' ILIKE ${exData.exerciseName}
+         OR "name"->>'it' ILIKE ${exData.exerciseName}
+         OR "name"->>'tr' ILIKE ${exData.exerciseName}
+      LIMIT 1
+    `;
+
+    if (matches.length > 0) {
+      return client.exercise.findUnique({ where: { id: matches[0].id } });
+    }
+
+    return client.exercise.create({
+      data: {
+        name: { en: exData.exerciseName },
+        description: { en: 'AI Generated' },
+      },
+    });
+  }
+
+  private async validateMediaId(
+    client: RoutineExerciseClient,
+    userId: string,
+    mediaId: string | undefined,
+    exerciseId: string,
+  ): Promise<string | null> {
+    if (!mediaId) return null;
+
+    const media = await client.exerciseMedia.findUnique({
+      where: { id: mediaId },
+      select: { id: true, userId: true, exerciseId: true, isPaused: true },
+    });
+
+    if (!media || media.isPaused) {
+      throw new BadRequestException('Media not found');
+    }
+    if (media.userId !== userId) {
+      throw new ForbiddenException('You can only link your own media to a routine');
+    }
+    if (media.exerciseId !== exerciseId) {
+      throw new BadRequestException('Media does not belong to the selected exercise');
+    }
+
+    return media.id;
+  }
+
+  private async createRoutineExercises(
+    client: RoutineExerciseClient,
+    routineId: string,
+    userId: string,
+    exercises: RoutineExerciseDto[],
+  ) {
+    for (let i = 0; i < exercises.length; i++) {
+      const exData = exercises[i];
+      const exercise = await this.resolveExercise(client, exData);
+      if (!exercise) continue;
+
+      const mediaId = await this.validateMediaId(
+        client,
+        userId,
+        exData.mediaId,
+        exercise.id,
+      );
+
+      await (client as PrismaService).routineExercise.create({
+        data: {
+          routineId,
+          exerciseId: exercise.id,
+          mediaId,
+          order: i + 1,
+          sets: exData.sets || 3,
+          reps: exData.reps || 10,
+          duration:
+            exData.duration && !isNaN(Number(exData.duration))
+              ? Number(exData.duration)
+              : null,
+        },
+      });
+    }
+  }
 
   async createRoutine(data: any) {
     if (!data.name || !data.userId) {
@@ -26,7 +141,7 @@ export class RoutinesService {
       );
     }
 
-    let exercises = data.exercises || [];
+    let exercises: RoutineExerciseDto[] = data.exercises || [];
 
     if (data.fromAi && data.aiPrompt) {
       console.log(`Generating routine from AI: ${data.aiPrompt}`);
@@ -48,48 +163,19 @@ export class RoutinesService {
       },
     });
 
-    for (let i = 0; i < exercises.length; i++) {
-      const exData = exercises[i];
-
-      const matches = await this.prisma.$queryRaw<{ id: string }[]>`
-        SELECT id FROM "Exercise"
-        WHERE "name"->>'en' ILIKE ${exData.exerciseName}
-           OR "name"->>'es' ILIKE ${exData.exerciseName}
-           OR "name"->>'it' ILIKE ${exData.exerciseName}
-           OR "name"->>'tr' ILIKE ${exData.exerciseName}
-        LIMIT 1
-      `;
-
-      let exercise = matches.length > 0
-        ? await this.prisma.exercise.findUnique({ where: { id: matches[0].id } })
-        : null;
-
-      if (!exercise) {
-        exercise = await this.prisma.exercise.create({
-          data: {
-            name: { en: exData.exerciseName },
-            description: { en: 'AI Generated' },
-          },
-        });
-      }
-
-      await this.prisma.routineExercise.create({
-        data: {
-          routineId: routine.id,
-          exerciseId: exercise.id,
-          order: i + 1,
-          sets: exData.sets || 3,
-          reps: exData.reps || 10,
-          duration: exData.duration && !isNaN(Number(exData.duration)) ? Number(exData.duration) : null,
-        },
-      });
-    }
+    await this.createRoutineExercises(
+      this.prisma,
+      routine.id,
+      data.userId,
+      exercises,
+    );
 
     return this.prisma.routine.findUnique({
       where: { id: routine.id },
       include: {
         exercises: {
-          include: { exercise: true },
+          include: this.routineExerciseInclude,
+          orderBy: { order: 'asc' },
         },
       },
     });
@@ -181,6 +267,7 @@ export class RoutinesService {
         },
         exercises: {
           include: {
+            media: true,
             exercise: {
               include: {
                 category: true,
@@ -222,34 +309,7 @@ export class RoutinesService {
     return this.prisma.$transaction(async (tx) => {
       if (dto.exercises !== undefined) {
         await tx.routineExercise.deleteMany({ where: { routineId: id } });
-
-        for (let i = 0; i < dto.exercises.length; i++) {
-          const ex = dto.exercises[i];
-          const matches = await tx.$queryRaw<{ id: string }[]>`
-            SELECT id FROM "Exercise"
-            WHERE "name"->>'en' ILIKE ${ex.exerciseName}
-               OR "name"->>'es' ILIKE ${ex.exerciseName}
-               OR "name"->>'it' ILIKE ${ex.exerciseName}
-               OR "name"->>'tr' ILIKE ${ex.exerciseName}
-            LIMIT 1
-          `;
-          const exercise = matches.length > 0
-            ? await tx.exercise.findUnique({ where: { id: matches[0].id } })
-            : null;
-
-          if (!exercise) continue;
-
-          await tx.routineExercise.create({
-            data: {
-              routineId: id,
-              exerciseId: exercise.id,
-              order: i + 1,
-              sets: ex.sets ?? 3,
-              reps: ex.reps ?? 10,
-              duration: ex.duration && !isNaN(Number(ex.duration)) ? Number(ex.duration) : null,
-            },
-          });
-        }
+        await this.createRoutineExercises(tx, id, userId, dto.exercises);
       }
 
       return tx.routine.update({
@@ -262,7 +322,10 @@ export class RoutinesService {
           ...(dto.isPublic !== undefined && { isPublic: dto.isPublic }),
         },
         include: {
-          exercises: { include: { exercise: true }, orderBy: { order: 'asc' } },
+          exercises: {
+            include: this.routineExerciseInclude,
+            orderBy: { order: 'asc' },
+          },
         },
       });
     });
@@ -285,8 +348,6 @@ export class RoutinesService {
     ]);
   }
 
-  // Centraliza la validación de "rutina pública existente". Reutilizable por
-  // acciones sociales sobre rutinas públicas (likes, favoritos, etc.).
   private async getPublicRoutineOrThrow(routineId: string) {
     const routine = await this.prisma.routine.findUnique({
       where: { id: routineId },
@@ -307,9 +368,6 @@ export class RoutinesService {
     await this.getPublicRoutineOrThrow(routineId);
 
     await this.prisma.$transaction(async (tx) => {
-      // createMany + skipDuplicates devuelve count === 1 solo si la fila es
-      // nueva. Así el contador desnormalizado se incrementa una única vez por
-      // usuario (idempotente). Un upsert no permitiría distinguir insert de update.
       const inserted = await tx.routineLike.createMany({
         data: [{ userId, routineId }],
         skipDuplicates: true,
@@ -335,7 +393,6 @@ export class RoutinesService {
           where: { id: routineId },
           data: { likes: { decrement: 1 } },
         });
-        // Guard defensivo: el contador nunca debe quedar negativo.
         await tx.routine.updateMany({
           where: { id: routineId, likes: { lt: 0 } },
           data: { likes: 0 },
@@ -357,6 +414,7 @@ export class RoutinesService {
           include: {
             exercises: {
               include: {
+                media: true,
                 exercise: {
                   include: {
                     media: {
