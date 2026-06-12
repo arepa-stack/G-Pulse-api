@@ -46,9 +46,9 @@ export class ExerciseImagesService {
       );
     }
 
-    const maxSizeBytes = 10 * 1024 * 1024;
+    const maxSizeBytes = 50 * 1024 * 1024;
     if (file.size > maxSizeBytes) {
-      throw new BadRequestException('File size exceeds the 10MB limit.');
+      throw new BadRequestException('File size exceeds the 50MB limit.');
     }
 
     const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
