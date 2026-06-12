@@ -331,6 +331,25 @@ export class UsersService {
                 },
               },
               _count: { select: { exercises: true } },
+              // First exercise (order 0) with its cover image, for the routine card thumbnail
+              exercises: {
+                orderBy: { order: 'asc' },
+                take: 1,
+                select: {
+                  media: { select: { url: true } },
+                  exercise: {
+                    select: {
+                      thumbnail: true,
+                      media: {
+                        where: { isPaused: false },
+                        take: 1,
+                        orderBy: { createdAt: 'asc' },
+                        select: { url: true },
+                      },
+                    },
+                  },
+                },
+              },
             },
           },
         },
