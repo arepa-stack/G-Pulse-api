@@ -260,17 +260,18 @@ export class RoutinesService {
             },
           },
           _count: { select: { exercises: true } },
-          // First exercise (order asc) with its cover image, for the routine card thumbnail
+          // First exercise (order asc) with its cover image, for the routine card thumbnail.
+          // Solo imágenes: un video no sirve de portada (el cliente no puede pintarlo como imagen).
           exercises: {
             orderBy: { order: 'asc' },
             take: 1,
             select: {
-              media: { select: { url: true } },
+              media: { select: { url: true, type: true } },
               exercise: {
                 select: {
                   thumbnail: true,
                   media: {
-                    where: { isPaused: false },
+                    where: { isPaused: false, type: 'IMAGE' },
                     take: 1,
                     orderBy: { createdAt: 'asc' },
                     select: { url: true },

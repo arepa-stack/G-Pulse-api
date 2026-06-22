@@ -79,7 +79,12 @@ export class ExercisesService {
 
     return this.prisma.exercise.findUnique({
       where: { id },
-      include: { media: mediaFilter },
+      include: {
+        media: mediaFilter,
+        primaryMuscles: true,
+        secondaryMuscles: true,
+        category: true,
+      },
     });
   }
 }
