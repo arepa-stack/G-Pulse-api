@@ -257,14 +257,16 @@ export class RoutinesService {
             select: {
               id: true,
               name: true,
+              avatarUrl: true,
+              plan: true,
             },
           },
           _count: { select: { exercises: true } },
-          // First exercise (order asc) with its cover image, for the routine card thumbnail.
+          // Primeros 3 ejercicios (order asc) con su imagen, para los thumbnails del card.
           // Solo imágenes: un video no sirve de portada (el cliente no puede pintarlo como imagen).
           exercises: {
             orderBy: { order: 'asc' },
-            take: 1,
+            take: 3,
             select: {
               media: { select: { url: true, type: true } },
               exercise: {
