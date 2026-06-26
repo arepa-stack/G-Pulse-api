@@ -52,5 +52,15 @@ export class ProgressController {
   async getExerciseHistory(@Request() req, @Param('id') id: string) {
     return this.progressService.getExerciseHistory(req.user.id, id);
   }
+
+  @Get('exercise/:id/stats')
+  @ApiOperation({
+    summary:
+      'Get aggregated stats for a specific exercise (times performed, max weight, volume, est. 1RM)',
+  })
+  @ApiParam({ name: 'id', description: 'Exercise UUID' })
+  async getExerciseStats(@Request() req, @Param('id') id: string) {
+    return this.progressService.getExerciseStats(req.user.id, id);
+  }
 }
 

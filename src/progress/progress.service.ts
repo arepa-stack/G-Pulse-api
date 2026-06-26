@@ -237,4 +237,79 @@ export class ProgressService {
       ],
     });
   }
+
+  /**
+   * Resumen agregado del progreso de un ejercicio para un usuario.
+   * Se calcula sobre los WorkoutSet ya guardados (sin tablas nuevas).
+   */
+  async getExerciseStats(userId: string, exerciseId: string) {
+    const sets = await this.prisma.workoutSet.findMany({
+      where: { exerciseId, activityLog: { userId } },
+      select: {
+        reps: true,
+        weight: true,
+        activityLogId: true,
+        activityLog: { select: { date: true } },
+      },
+    });
+
+    if (sets.length === 0) {
+      return {
+        exerciseId,
+        timesPerformed: 0,
+        totalSets: 0,
+        totalReps: 0,
+        maxWeight: null,
+        maxReps: 0,
+        totalVolume: 0,
+        estimatedOneRepMax: null,
+        firstPerformedAt: null,
+        lastPerformedAt: null,
+      };
+    }
+
+    const sessions = new Set<string>();
+    let totalReps = 0;
+    let maxWeight: number | null = null;
+    let maxReps = 0;
+    let totalVolume = 0;
+    let estimatedOneRepMax: number | null = null;
+    let first = sets[0].activityLog.date;
+    let last = sets[0].activityLog.date;
+
+    for (const s of sets) {
+      sessions.add(s.activityLogId);
+      totalReps += s.reps;
+      maxReps = Math.max(maxReps, s.reps);
+      if (s.weight != null) {
+        maxWeight = maxWeight == null ? s.weight : Math.max(maxWeight, s.weight);
+        totalVolume += s.reps * s.weight;
+        // Epley: 1RM = peso * (1 + reps/30)
+        const epley = s.weight * (1 + s.reps / 30);
+        estimatedOneRepMax =
+          estimatedOneRepMax == null
+            ? epley
+            : Math.max(estimatedOneRepMax, epley);
+      }
+      const d = s.activityLog.date;
+      if (d < first) first = d;
+      if (d > last) last = d;
+    }
+
+    return {
+      exerciseId,
+      timesPerformed: sessions.size,
+      totalSets: sets.length,
+      totalReps,
+      maxWeight,
+      maxReps,
+      totalVolume,
+      estimatedOneRepMax:
+        estimatedOneRepMax == null
+          ? null
+          : Math.round(estimatedOneRepMax * 10) / 10,
+      firstPerformedAt: first,
+      lastPerformedAt: last,
+    };
+  }
 }

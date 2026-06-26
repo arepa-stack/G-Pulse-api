@@ -89,4 +89,40 @@ describe('ProgressService', () => {
       );
     });
   });
+
+  describe('getExerciseStats', () => {
+    it('returns zeroed stats when no sets', async () => {
+      mockPrisma.workoutSet.findMany.mockResolvedValue([]);
+      const stats = await service.getExerciseStats('u1', 'ex1');
+      expect(stats).toMatchObject({
+        timesPerformed: 0,
+        totalSets: 0,
+        maxWeight: null,
+        estimatedOneRepMax: null,
+      });
+    });
+
+    it('aggregates sets across sessions', async () => {
+      const d1 = new Date('2026-01-01');
+      const d2 = new Date('2026-01-03');
+      mockPrisma.workoutSet.findMany.mockResolvedValue([
+        { reps: 10, weight: 50, activityLogId: 'a1', activityLog: { date: d1 } },
+        { reps: 8, weight: 60, activityLogId: 'a1', activityLog: { date: d1 } },
+        { reps: 5, weight: 80, activityLogId: 'a2', activityLog: { date: d2 } },
+      ]);
+
+      const stats = await service.getExerciseStats('u1', 'ex1');
+
+      expect(stats.timesPerformed).toBe(2); // 2 sesiones distintas
+      expect(stats.totalSets).toBe(3);
+      expect(stats.totalReps).toBe(23);
+      expect(stats.maxWeight).toBe(80);
+      expect(stats.maxReps).toBe(10);
+      expect(stats.totalVolume).toBe(10 * 50 + 8 * 60 + 5 * 80); // 1380
+      // Epley máx: 80*(1+5/30)=93.3
+      expect(stats.estimatedOneRepMax).toBe(93.3);
+      expect(stats.firstPerformedAt).toEqual(d1);
+      expect(stats.lastPerformedAt).toEqual(d2);
+    });
+  });
 });
