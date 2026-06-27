@@ -210,6 +210,44 @@ export class ProgressService {
     }));
   }
 
+  /**
+   * Último set realizado por ejercicio (batched), para mostrar "Última vez: 75kg x 8"
+   * en la pantalla de inicio de sesión. Toma la sesión más reciente de cada ejercicio
+   * y, dentro de ella, el set más pesado (set de trabajo principal).
+   */
+  async getLastSets(userId: string, exerciseIds: string[]) {
+    const ids = [...new Set(exerciseIds)].filter(Boolean);
+    if (ids.length === 0) return [];
+
+    const sets = await this.prisma.workoutSet.findMany({
+      where: { exerciseId: { in: ids }, activityLog: { userId } },
+      select: {
+        exerciseId: true,
+        reps: true,
+        weight: true,
+        activityLog: { select: { date: true } },
+      },
+      orderBy: [{ activityLog: { date: 'desc' } }, { weight: 'desc' }],
+    });
+
+    const lastByExercise = new Map<
+      string,
+      { exerciseId: string; weight: number | null; reps: number; date: Date }
+    >();
+    for (const s of sets) {
+      if (!lastByExercise.has(s.exerciseId)) {
+        lastByExercise.set(s.exerciseId, {
+          exerciseId: s.exerciseId,
+          weight: s.weight,
+          reps: s.reps,
+          date: s.activityLog.date,
+        });
+      }
+    }
+
+    return Array.from(lastByExercise.values());
+  }
+
   async getExerciseHistory(userId: string, exerciseId: string) {
     return this.prisma.workoutSet.findMany({
       where: {

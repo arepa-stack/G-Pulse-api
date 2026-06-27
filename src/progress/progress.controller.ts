@@ -6,6 +6,7 @@ import {
   UseGuards,
   Request,
   Param,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -44,6 +45,18 @@ export class ProgressController {
   @ApiOperation({ summary: 'Get personal records (PRs) per exercise' })
   async getPersonalRecords(@Request() req) {
     return this.progressService.getPersonalRecords(req.user.id);
+  }
+
+  @Get('last-sets')
+  @ApiOperation({
+    summary: 'Get the last performed set per exercise (batched, comma-separated ids)',
+  })
+  async getLastSets(@Request() req, @Query('exerciseIds') exerciseIds: string) {
+    const ids = (exerciseIds ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return this.progressService.getLastSets(req.user.id, ids);
   }
 
   @Get('exercise/:id')
