@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString, IsArray, ValidateNested } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, IsArray, MaxLength, ValidateNested } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -39,6 +39,12 @@ export class LogActivityDto {
   @IsNotEmpty()
   @IsNumber()
   calories: number;
+
+  @ApiProperty({ description: 'Optional note about the session', required: false, maxLength: 1000 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  notes?: string;
 
   @ApiProperty({ description: 'Workout sets performed', type: [WorkoutSetDto], required: false })
   @IsOptional()

@@ -44,9 +44,37 @@ export class ProgressService {
 
     const newStreak = await this.updateStreak(userId);
     this.maybeNotifyStreakMilestone(userId, newStreak);
-    this.maybeNotifyPersonalRecords(userId, sets, previousMaxByExercise);
 
-    return log;
+    const personalRecords = this.detectPersonalRecords(sets, previousMaxByExercise);
+    if (personalRecords.length > 0) {
+      this.pushService.sendToUserAsync(userId, {
+        title: '¡Nuevo récord personal!',
+        body: 'Has superado tu mejor marca en un ejercicio.',
+        data: { type: 'pr', exerciseId: personalRecords[0].exerciseId },
+      });
+    }
+
+    return { ...log, personalRecords };
+  }
+
+  /** Sets cuyo peso supera el máximo previo del ejercicio. Uno por ejercicio (el primero que lo supera). */
+  private detectPersonalRecords(
+    sets: LogActivityDto['sets'],
+    previousMaxByExercise: Map<string, number>,
+  ): Array<{ exerciseId: string; weight: number }> {
+    if (!sets?.length) return [];
+
+    const seen = new Set<string>();
+    const prs: Array<{ exerciseId: string; weight: number }> = [];
+    for (const set of sets) {
+      if (set.weight == null || seen.has(set.exerciseId)) continue;
+      const previousMax = previousMaxByExercise.get(set.exerciseId) ?? 0;
+      if (set.weight > previousMax) {
+        seen.add(set.exerciseId);
+        prs.push({ exerciseId: set.exerciseId, weight: set.weight });
+      }
+    }
+    return prs;
   }
 
   async updateStreak(userId: string): Promise<number> {
@@ -123,30 +151,6 @@ export class ProgressService {
     }
 
     return map;
-  }
-
-  private maybeNotifyPersonalRecords(
-    userId: string,
-    sets: LogActivityDto['sets'],
-    previousMaxByExercise: Map<string, number>,
-  ) {
-    if (!sets?.length) return;
-
-    const notified = new Set<string>();
-
-    for (const set of sets) {
-      if (set.weight == null || notified.has(set.exerciseId)) continue;
-
-      const previousMax = previousMaxByExercise.get(set.exerciseId) ?? 0;
-      if (set.weight > previousMax) {
-        notified.add(set.exerciseId);
-        this.pushService.sendToUserAsync(userId, {
-          title: '¡Nuevo récord personal!',
-          body: 'Has superado tu mejor marca en un ejercicio.',
-          data: { type: 'pr', exerciseId: set.exerciseId },
-        });
-      }
-    }
   }
 
   async getHistory(userId: string) {

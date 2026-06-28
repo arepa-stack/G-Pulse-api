@@ -205,6 +205,7 @@ model ActivityLog {
   date      DateTime @default(now())
   duration  Int
   calories  Int
+  notes     String?
   routine   Routine? @relation(fields: [routineId], references: [id], onDelete: SetNull)
   user      User     @relation(fields: [userId], references: [id])
   sets      WorkoutSet[]
