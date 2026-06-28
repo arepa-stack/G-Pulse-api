@@ -198,11 +198,19 @@ export class ProgressService {
     });
 
     const prsMap = new Map<string, (typeof sets)[0]>();
+    // Segundo mejor peso por ejercicio (estrictamente menor al PR), para el delta "+X kg".
+    const previousMax = new Map<string, number>();
     for (const set of sets) {
       const existing = prsMap.get(set.exerciseId);
       if (!existing || (set.weight || 0) > (existing.weight || 0)) {
         prsMap.set(set.exerciseId, set);
       }
+    }
+    for (const set of sets) {
+      const pr = prsMap.get(set.exerciseId);
+      const w = set.weight || 0;
+      if (!pr || w >= (pr.weight || 0)) continue; // ignora el propio PR y empates
+      if (w > (previousMax.get(set.exerciseId) ?? 0)) previousMax.set(set.exerciseId, w);
     }
 
     return Array.from(prsMap.values()).map((pr) => ({
@@ -211,6 +219,7 @@ export class ProgressService {
       weight: pr.weight,
       reps: pr.reps,
       date: pr.activityLog.date,
+      previousWeight: previousMax.get(pr.exerciseId) ?? null,
     }));
   }
 
