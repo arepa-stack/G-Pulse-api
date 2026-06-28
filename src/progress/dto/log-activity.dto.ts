@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString, IsArray, MaxLength, ValidateNested } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, IsArray, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -45,6 +45,13 @@ export class LogActivityDto {
   @IsString()
   @MaxLength(1000)
   notes?: string;
+
+  @ApiProperty({ description: 'Mood index 0..4 (exhausted..unstoppable)', required: false, minimum: 0, maximum: 4 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(4)
+  mood?: number;
 
   @ApiProperty({ description: 'Workout sets performed', type: [WorkoutSetDto], required: false })
   @IsOptional()

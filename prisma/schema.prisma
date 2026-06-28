@@ -206,6 +206,7 @@ model ActivityLog {
   duration  Int
   calories  Int
   notes     String?
+  mood      Int?     // índice 0..4 del ánimo elegido al terminar (exhausted..unstoppable)
   routine   Routine? @relation(fields: [routineId], references: [id], onDelete: SetNull)
   user      User     @relation(fields: [userId], references: [id])
   sets      WorkoutSet[]
