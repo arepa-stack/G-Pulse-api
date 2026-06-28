@@ -20,6 +20,7 @@ model User {
   role           Role      @default(USER)
   level          UserLevel @default(BEGINNER)
   trainingStreak Int       @default(0)
+  longestStreak  Int       @default(0)
   quotasUsed     Int       @default(0)
   lastQuotaReset DateTime  @default(now())
 

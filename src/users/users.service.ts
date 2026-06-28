@@ -273,6 +273,7 @@ export class UsersService {
           select: {
             calories: true,
             duration: true,
+            date: true,
           },
         },
       },
@@ -291,13 +292,35 @@ export class UsersService {
 
     return {
       trainingStreak: user.trainingStreak,
+      longestStreak: user.longestStreak,
       routinesCount: user._count.routines,
       totalWorkouts: user._count.activityLogs,
       totalCalories,
       totalDurationMinutes: totalDuration,
       plan: user.plan,
       level: user.level,
+      weeklyWorkouts: this.weeklyWorkoutCounts(
+        user.activityLogs.map((l) => l.date),
+      ),
     };
+  }
+
+  /**
+   * Sesiones por semana en las últimas 8 semanas. Índice 0 = más antigua, 7 = semana actual.
+   * Bucket por días transcurridos desde hoy (semanas de 7 días hacia atrás).
+   */
+  private weeklyWorkoutCounts(dates: Date[]): number[] {
+    const WEEKS = 8;
+    const buckets = new Array<number>(WEEKS).fill(0);
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    for (const d of dates) {
+      const daysAgo = Math.floor((now - new Date(d).getTime()) / dayMs);
+      if (daysAgo < 0) continue;
+      const weeksAgo = Math.floor(daysAgo / 7);
+      if (weeksAgo < WEEKS) buckets[WEEKS - 1 - weeksAgo] += 1;
+    }
+    return buckets;
   }
 
   async getFavorites(userId: string, q: FindAllRoutinesDto) {

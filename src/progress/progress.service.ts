@@ -109,7 +109,10 @@ export class ProgressService {
 
     await this.prisma.user.update({
       where: { id: userId },
-      data: { trainingStreak: newStreak },
+      data: {
+        trainingStreak: newStreak,
+        longestStreak: Math.max(user.longestStreak, newStreak),
+      },
     });
 
     return newStreak;
