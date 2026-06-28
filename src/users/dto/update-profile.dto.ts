@@ -1,10 +1,13 @@
 import {
   IsBoolean,
   IsEnum,
+  IsInt,
   IsOptional,
   IsString,
   Matches,
+  Max,
   MaxLength,
+  Min,
   MinLength,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
@@ -55,4 +58,16 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsBoolean()
   pushEnabled?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Default rest time between sets, in seconds',
+    example: 90,
+    minimum: 5,
+    maximum: 600,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(5)
+  @Max(600)
+  restSeconds?: number;
 }

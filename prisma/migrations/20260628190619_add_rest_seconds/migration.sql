@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "restSeconds" INTEGER NOT NULL DEFAULT 90;
