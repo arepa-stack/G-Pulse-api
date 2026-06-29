@@ -171,7 +171,6 @@ export class ProgressService {
                 name: true,
                 thumbnail: true,
                 media: {
-                  where: { type: 'IMAGE' },
                   orderBy: { createdAt: 'asc' },
                   take: 1,
                   select: { url: true },
