@@ -167,7 +167,16 @@ export class ProgressService {
         sets: {
           include: {
             exercise: {
-              select: { name: true },
+              select: {
+                name: true,
+                thumbnail: true,
+                media: {
+                  where: { type: 'IMAGE' },
+                  orderBy: { createdAt: 'asc' },
+                  take: 1,
+                  select: { url: true },
+                },
+              },
             },
           },
           orderBy: { setNumber: 'asc' },
