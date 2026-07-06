@@ -30,7 +30,16 @@ export class RoutinesService {
   // Flujo seguro: texto libre -> extractor -> SQL candidatos -> IA elige por id -> guardián valida.
   // Devuelve un PREVIEW (no guarda). El usuario confirma con POST /routines pasando los exerciseId.
   async generatePreview(userId: string, text: string) {
-    const intent = await this.geminiService.extractRoutineIntent(text);
+    let intent;
+    try {
+      intent = await this.geminiService.extractRoutineIntent(text);
+    } catch (e) {
+      console.error('extractRoutineIntent failed:', e);
+      return {
+        status: 'error',
+        mensaje: 'El servicio de IA no está disponible en este momento. Intenta más tarde.',
+      };
+    }
 
     if (intent.intent !== 'rutina') {
       return {
@@ -83,15 +92,24 @@ export class RoutinesService {
       );
     }
 
-    const ai = await this.geminiService.generateRoutineFromCandidates(
-      {
-        difficulty: intent.difficulty ?? undefined,
-        matices: intent.matices ?? undefined,
-        restricciones: intent.restricciones ?? undefined,
-        num_ejercicios: intent.num_ejercicios ?? undefined,
-      },
-      candidatos,
-    );
+    let ai;
+    try {
+      ai = await this.geminiService.generateRoutineFromCandidates(
+        {
+          difficulty: intent.difficulty ?? undefined,
+          matices: intent.matices ?? undefined,
+          restricciones: intent.restricciones ?? undefined,
+          num_ejercicios: intent.num_ejercicios ?? undefined,
+        },
+        candidatos,
+      );
+    } catch (e) {
+      console.error('generateRoutineFromCandidates failed:', e);
+      return {
+        status: 'error',
+        mensaje: 'El servicio de IA no está disponible en este momento. Intenta más tarde.',
+      };
+    }
     await this.geminiService.incrementUsage(userId);
 
     // Guardián: solo IDs que existen en la BD. Los inventados se descartan (nunca se guardan).
