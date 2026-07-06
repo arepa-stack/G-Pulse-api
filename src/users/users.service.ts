@@ -144,6 +144,25 @@ export class UsersService {
           likes: true,
           createdAt: true,
           _count: { select: { exercises: true } },
+          // Primeros 3 ejercicios con imagen, para la portada tipo card (igual que /routines/public).
+          exercises: {
+            orderBy: { order: 'asc' },
+            take: 3,
+            select: {
+              media: { select: { url: true, type: true } },
+              exercise: {
+                select: {
+                  thumbnail: true,
+                  media: {
+                    where: { isPaused: false, type: 'IMAGE' },
+                    take: 1,
+                    orderBy: { createdAt: 'asc' },
+                    select: { url: true },
+                  },
+                },
+              },
+            },
+          },
         },
       }),
     ]);
