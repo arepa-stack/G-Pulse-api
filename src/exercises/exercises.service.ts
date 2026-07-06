@@ -27,9 +27,16 @@ export class ExercisesService {
     banda: 'band', 'banda de resistencia': 'resistance band',
   };
 
+  // "gimnasio/gym/todo/completo" = acceso a todo el equipo -> NO filtrar por equipo.
+  private static readonly ALL_EQUIPMENT = new Set([
+    'gimnasio', 'gym', 'gimnasio completo', 'gym completo', 'full gym',
+    'todo', 'todos', 'cualquiera', 'all', 'completo',
+  ]);
+
   private normalizeEquipment(equipment?: string): string | undefined {
     if (!equipment) return undefined;
     const key = equipment.trim().toLowerCase();
+    if (ExercisesService.ALL_EQUIPMENT.has(key)) return undefined;
     return ExercisesService.EQUIPMENT_ES[key] ?? equipment;
   }
 

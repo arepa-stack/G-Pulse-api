@@ -57,11 +57,19 @@ export class RoutinesService {
       return { status: 'needs_input', faltan: [...new Set(faltan)], intent };
     }
 
-    const candidatosRaw = await this.exercisesService.findCandidates({
+    let candidatosRaw = await this.exercisesService.findCandidates({
       category: intent.category!,
       equipment: intent.equipment ?? undefined,
       difficulty: intent.difficulty ?? undefined,
     });
+
+    // Fallback: si el equipo específico no dio candidatos, reintenta sin filtrar por equipo.
+    if (candidatosRaw.length === 0 && intent.equipment) {
+      candidatosRaw = await this.exercisesService.findCandidates({
+        category: intent.category!,
+        difficulty: intent.difficulty ?? undefined,
+      });
+    }
 
     if (candidatosRaw.length === 0) {
       return {
