@@ -33,6 +33,8 @@ interface NewExternalExercise {
   muscle_group: string;
   secondary_muscles: string[];
   target: string;
+  difficulty?: { en?: string; es?: string; it?: string; tr?: string };
+  pro_tip?: { en?: string; es?: string; it?: string; tr?: string };
   image: string;
   gif_url: string;
   thumbnail?: string | null;
@@ -114,6 +116,8 @@ async function main() {
       instructions: ex.instruction_steps,
       categoryId: category.id,
       description: ex.instructions,
+      difficulty: ex.difficulty?.en ?? null, // enum key; app traduce las 3 etiquetas
+      proTip: ex.pro_tip ? (ex.pro_tip as any) : Prisma.DbNull,
       thumbnail: ex.thumbnail ?? null,
       images_leip: ex.images_leip ? (ex.images_leip as any) : Prisma.DbNull,
     };

@@ -86,7 +86,8 @@ model Exercise {
   name         Json
   description  Json?
   instructions Json?
-  difficulty   String? // beginner, intermediate, expert
+  difficulty   String? // beginner, intermediate, advanced (canonical en key)
+  proTip       Json?   // i18n consejo corto { en, es, it, tr }
   mechanic     String? // compound, isolation
   force        String? // push, pull, static
   equipment    String?
