@@ -127,7 +127,9 @@ export class GeminiService {
 
     const prompt = `Eres un extractor de intención para una app de gym. Analiza el mensaje y devuelve los parámetros.
 Categorías válidas (usa el término en inglés): ${GeminiService.CATEGORIES.join(', ')}.
-equipment y difficulty en inglés. Si el usuario NO especifica equipment, agrégalo a "faltan".
+equipment y difficulty en inglés.
+Si el usuario menciona "gimnasio", "gym", "gimnasio completo" o "todo el equipo", pon equipment="gym" (acceso a todo) y NO lo agregues a "faltan".
+Solo agrega "equipment" a "faltan" si el usuario NO dio ninguna pista de equipo.
 Si el mensaje no es sobre armar rutina de ejercicio, intent != "rutina".
 
 Mensaje del usuario: "${text}"`;
