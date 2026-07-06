@@ -9,6 +9,7 @@ import {
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { GeminiService } from '../gemini/gemini.service';
+import { ExercisesService } from '../exercises/exercises.service';
 import { FindAllRoutinesDto } from './dto/find-all-routines.dto';
 import { UpdateRoutineDto } from './dto/update-routine.dto';
 import { RoutineExerciseDto } from './dto/routine-exercise.dto';
@@ -23,7 +24,127 @@ export class RoutinesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly geminiService: GeminiService,
+    private readonly exercisesService: ExercisesService,
   ) {}
+
+  // Flujo seguro: texto libre -> extractor -> SQL candidatos -> IA elige por id -> guardián valida.
+  // Devuelve un PREVIEW (no guarda). El usuario confirma con POST /routines pasando los exerciseId.
+  async generatePreview(userId: string, text: string) {
+    const intent = await this.geminiService.extractRoutineIntent(text);
+
+    if (intent.intent !== 'rutina') {
+      return {
+        status: 'unsupported',
+        mensaje:
+          'Por ahora solo armo rutinas de entrenamiento 💪. Los planes de nutrición llegan pronto.',
+      };
+    }
+
+    const faltan = (intent.faltan || []).filter((f) =>
+      ['equipment', 'difficulty'].includes(f),
+    );
+    if (!intent.category) faltan.unshift('category');
+    if (faltan.length) {
+      return { status: 'needs_input', faltan: [...new Set(faltan)], intent };
+    }
+
+    const candidatosRaw = await this.exercisesService.findCandidates({
+      category: intent.category!,
+      equipment: intent.equipment ?? undefined,
+      difficulty: intent.difficulty ?? undefined,
+    });
+
+    if (candidatosRaw.length === 0) {
+      return {
+        status: 'no_candidates',
+        mensaje: 'No hay ejercicios que cumplan esos filtros.',
+        filtros: intent,
+      };
+    }
+
+    const pickName = (name: any): string =>
+      name?.es || name?.en || (name ? String(Object.values(name)[0]) : '');
+    const candidatos = candidatosRaw.map((c) => ({
+      id: c.id,
+      name: pickName(c.name),
+      equipment: c.equipment,
+    }));
+
+    // Cuota: solo la generación cuenta (el extractor es barato).
+    const canGenerate = await this.geminiService.checkQuota(userId);
+    if (!canGenerate) {
+      throw new HttpException(
+        {
+          status: HttpStatus.TOO_MANY_REQUESTS,
+          error: 'Daily AI Limit Reached for your plan.',
+          type: 'LIMIT_REACHED',
+        },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    const ai = await this.geminiService.generateRoutineFromCandidates(
+      {
+        difficulty: intent.difficulty ?? undefined,
+        matices: intent.matices ?? undefined,
+        restricciones: intent.restricciones ?? undefined,
+        num_ejercicios: intent.num_ejercicios ?? undefined,
+      },
+      candidatos,
+    );
+    await this.geminiService.incrementUsage(userId);
+
+    // Guardián: solo IDs que existen en la BD. Los inventados se descartan (nunca se guardan).
+    const ids = (ai.ejercicios || []).map((e) => e.exercise_id);
+    const valid = await this.prisma.exercise.findMany({
+      where: { id: { in: ids } },
+      select: {
+        id: true,
+        name: true,
+        thumbnail: true,
+        proTip: true,
+        media: {
+          where: { isPaused: false },
+          take: 1,
+          orderBy: { createdAt: 'asc' },
+          select: { url: true },
+        },
+      },
+    });
+    const validMap = new Map(valid.map((v) => [v.id, v]));
+
+    const ejercicios = (ai.ejercicios || [])
+      .filter((e) => validMap.has(e.exercise_id))
+      .map((e) => {
+        const ex = validMap.get(e.exercise_id)!;
+        return {
+          exerciseId: ex.id,
+          name: ex.name,
+          thumbnail: ex.thumbnail,
+          image: ex.media[0]?.url ?? null,
+          proTip: ex.proTip,
+          sets: e.series,
+          reps: e.reps,
+          restSeconds: e.descanso_segundos,
+        };
+      });
+    const descartados = ids.filter((id) => !validMap.has(id));
+
+    return {
+      status: 'ready',
+      preview: {
+        nombre_rutina: ai.nombre_rutina,
+        nota_seguridad: ai.nota_seguridad ?? null,
+        ejercicios,
+      },
+      meta: {
+        candidatos: candidatos.length,
+        generados: ids.length,
+        descartados: descartados.length,
+        idsDescartados: descartados,
+      },
+    };
+  }
 
   private readonly routineExerciseInclude = {
     media: true,
@@ -64,12 +185,10 @@ export class RoutinesService {
       return client.exercise.findUnique({ where: { id: matches[0].id } });
     }
 
-    return client.exercise.create({
-      data: {
-        name: { en: exData.exerciseName },
-        description: { en: 'AI Generated' },
-      },
-    });
+    // ponytail: nunca crear ejercicios desde input de rutina — la BD es la fuente de verdad.
+    // Un nombre que no matchea (IA alucinada o typo) se descarta, no se inserta un fantasma.
+    console.warn(`resolveExercise: no match for "${exData.exerciseName}" — slot skipped`);
+    return null;
   }
 
   private async validateMediaId(

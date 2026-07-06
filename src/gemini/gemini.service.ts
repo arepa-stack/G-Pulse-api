@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
@@ -73,6 +73,117 @@ export class GeminiService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  // Categorías reales del dataset (Category.name). La IA mapea "pecho" -> "chest".
+  private static readonly CATEGORIES = [
+    'chest', 'back', 'shoulders', 'upper arms', 'lower arms',
+    'upper legs', 'lower legs', 'waist', 'cardio', 'neck',
+  ];
+
+  private structuredModel(schema: any) {
+    return this.genAI.getGenerativeModel({
+      model: 'gemini-flash-lite-latest',
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: schema,
+        temperature: 0.2,
+      },
+    });
+  }
+
+  // IA #1 — Extractor: lenguaje natural -> parámetros estructurados. Barato, no gasta cuota.
+  async extractRoutineIntent(text: string): Promise<{
+    intent: 'rutina' | 'nutricion' | 'otro';
+    category: string | null;
+    difficulty: string | null;
+    equipment: string | null;
+    num_ejercicios: number | null;
+    matices: string | null;
+    restricciones: string | null;
+    faltan: string[];
+  }> {
+    if (!this.configService.get<string>('GEMINI_API_KEY')) {
+      return {
+        intent: 'rutina', category: null, difficulty: null, equipment: null,
+        num_ejercicios: null, matices: null, restricciones: null, faltan: ['equipment'],
+      };
+    }
+
+    const schema = {
+      type: SchemaType.OBJECT,
+      properties: {
+        intent: { type: SchemaType.STRING, format: 'enum', enum: ['rutina', 'nutricion', 'otro'] },
+        category: { type: SchemaType.STRING, nullable: true, description: 'Una de: ' + GeminiService.CATEGORIES.join(', ') },
+        difficulty: { type: SchemaType.STRING, format: 'enum', nullable: true, enum: ['beginner', 'intermediate', 'advanced'] },
+        equipment: { type: SchemaType.STRING, nullable: true, description: 'ej: dumbbell, barbell, cable, body weight, machine' },
+        num_ejercicios: { type: SchemaType.INTEGER, nullable: true },
+        matices: { type: SchemaType.STRING, nullable: true, description: 'Detalles no filtrables por columna, ej: "parte superior del pecho"' },
+        restricciones: { type: SchemaType.STRING, nullable: true, description: 'Lesiones o límites, ej: "dolor hombro derecho, evitar press pesado"' },
+        faltan: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING }, description: 'Slots requeridos ausentes: category, difficulty o equipment' },
+      },
+      required: ['intent', 'category', 'difficulty', 'equipment', 'num_ejercicios', 'matices', 'restricciones', 'faltan'],
+    };
+
+    const prompt = `Eres un extractor de intención para una app de gym. Analiza el mensaje y devuelve los parámetros.
+Categorías válidas (usa el término en inglés): ${GeminiService.CATEGORIES.join(', ')}.
+equipment y difficulty en inglés. Si el usuario NO especifica equipment, agrégalo a "faltan".
+Si el mensaje no es sobre armar rutina de ejercicio, intent != "rutina".
+
+Mensaje del usuario: "${text}"`;
+
+    const result = await this.structuredModel(schema).generateContent(prompt);
+    return JSON.parse(result.response.text());
+  }
+
+  // IA #2 — Generador: elige de los candidatos (por id) y dosifica. Prohibido inventar.
+  async generateRoutineFromCandidates(
+    profile: { difficulty?: string; matices?: string; restricciones?: string; num_ejercicios?: number },
+    candidatos: Array<{ id: string; name: string; equipment: string | null }>,
+  ): Promise<{
+    nombre_rutina: string;
+    nota_seguridad: string | null;
+    ejercicios: Array<{ exercise_id: string; series: number; reps: string; descanso_segundos: number }>;
+  }> {
+    const schema = {
+      type: SchemaType.OBJECT,
+      properties: {
+        nombre_rutina: { type: SchemaType.STRING },
+        nota_seguridad: { type: SchemaType.STRING, nullable: true },
+        ejercicios: {
+          type: SchemaType.ARRAY,
+          items: {
+            type: SchemaType.OBJECT,
+            properties: {
+              exercise_id: { type: SchemaType.STRING, description: 'ID EXACTO de la lista de candidatos. Prohibido inventar.' },
+              series: { type: SchemaType.INTEGER },
+              reps: { type: SchemaType.STRING, description: 'ej: "8-10", "12-15"' },
+              descanso_segundos: { type: SchemaType.INTEGER },
+            },
+            required: ['exercise_id', 'series', 'reps', 'descanso_segundos'],
+          },
+        },
+      },
+      required: ['nombre_rutina', 'ejercicios'],
+    };
+
+    const n = profile.num_ejercicios ?? 5;
+    const prompt = `Eres un entrenador de élite. Arma una rutina de ${n} ejercicios.
+REGLA DE ORO: SOLO puedes usar ejercicios de la lista CANDIDATOS. Está PROHIBIDO inventar IDs o nombres.
+Usa el "exercise_id" EXACTO tal como aparece.
+
+Perfil:
+- Nivel: ${profile.difficulty ?? 'intermediate'}
+- Enfoque/matices: ${profile.matices ?? 'general'}
+- Restricciones/lesiones: ${profile.restricciones ?? 'ninguna'}
+
+Respeta las restricciones (evita ejercicios que agraven la lesión). Si hay matiz (ej. "parte superior"), prioriza por el nombre del ejercicio.
+
+CANDIDATOS (elige de aquí):
+${JSON.stringify(candidatos)}`;
+
+    const result = await this.structuredModel(schema).generateContent(prompt);
+    return JSON.parse(result.response.text());
   }
 
   async generateText(

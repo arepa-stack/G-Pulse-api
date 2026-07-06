@@ -27,6 +27,7 @@ import { RoutinesService } from './routines.service';
 import { CreateRoutineDto } from './dto/create-routine.dto';
 import { FindAllRoutinesDto } from './dto/find-all-routines.dto';
 import { UpdateRoutineDto } from './dto/update-routine.dto';
+import { GenerateRoutineDto } from './dto/generate-routine.dto';
 
 interface AuthRequest {
   user: { id: string; email: string; role: string };
@@ -48,6 +49,18 @@ export class RoutinesController {
     @Body() dto: CreateRoutineDto,
   ) {
     return this.routinesService.createRoutine({ ...dto, userId: req.user.id });
+  }
+
+  @Post('generate')
+  @ApiOperation({
+    summary: 'Generate a routine preview from natural language (AI + DB-safe)',
+  })
+  @ApiBody({ type: GenerateRoutineDto })
+  async generate(
+    @Request() req: AuthRequest,
+    @Body() dto: GenerateRoutineDto,
+  ) {
+    return this.routinesService.generatePreview(req.user.id, dto.text);
   }
 
   @Get()
