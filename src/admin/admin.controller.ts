@@ -16,6 +16,7 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { RolesGuard } from '../auth/roles/roles.guard';
@@ -24,6 +25,10 @@ import { Role, SubscriptionPlan } from '@prisma/client';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { UpdateAdminUserDto } from './dto/update-admin-user.dto';
+import { CreateMuscleDto } from './dto/create-muscle.dto';
+import { UpdateMuscleDto } from './dto/update-muscle.dto';
+import { CreateCategoryDto } from './dto/create-category.dto';
+import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -131,5 +136,83 @@ export class AdminController {
   @ApiOperation({ summary: 'Get administrative dashboard statistics' })
   async getStats() {
     return this.adminService.getDashboardStats();
+  }
+
+  // ---- MUSCLES ----
+
+  @Get('muscles')
+  @ApiOperation({
+    summary: 'List all muscles with their primary/secondary exercise counts',
+  })
+  async getMuscles() {
+    return this.adminService.findAllMuscles();
+  }
+
+  @Post('muscles')
+  @ApiOperation({ summary: 'Create a new muscle in the catalog' })
+  @ApiBody({ type: CreateMuscleDto })
+  async createMuscle(@Body() dto: CreateMuscleDto) {
+    return this.adminService.createMuscle(dto);
+  }
+
+  @Patch('muscles/:id')
+  @ApiOperation({ summary: 'Update an existing muscle' })
+  @ApiParam({ name: 'id', description: 'Muscle UUID' })
+  @ApiBody({ type: UpdateMuscleDto })
+  async updateMuscle(@Param('id') id: string, @Body() dto: UpdateMuscleDto) {
+    return this.adminService.updateMuscle(id, dto);
+  }
+
+  @Delete('muscles/:id')
+  @ApiOperation({
+    summary:
+      'Delete a muscle. Use ?force=true to detach it from exercises before deleting',
+  })
+  @ApiParam({ name: 'id', description: 'Muscle UUID' })
+  @ApiQuery({ name: 'force', required: false, type: Boolean })
+  async deleteMuscle(@Param('id') id: string, @Query('force') force?: string) {
+    return this.adminService.deleteMuscle(id, force === 'true');
+  }
+
+  // ---- CATEGORIES ----
+
+  @Get('categories')
+  @ApiOperation({
+    summary: 'List all categories with their exercise counts',
+  })
+  async getCategories() {
+    return this.adminService.findAllCategories();
+  }
+
+  @Post('categories')
+  @ApiOperation({ summary: 'Create a new category in the catalog' })
+  @ApiBody({ type: CreateCategoryDto })
+  async createCategory(@Body() dto: CreateCategoryDto) {
+    return this.adminService.createCategory(dto);
+  }
+
+  @Patch('categories/:id')
+  @ApiOperation({ summary: 'Update an existing category' })
+  @ApiParam({ name: 'id', description: 'Category UUID' })
+  @ApiBody({ type: UpdateCategoryDto })
+  async updateCategory(
+    @Param('id') id: string,
+    @Body() dto: UpdateCategoryDto,
+  ) {
+    return this.adminService.updateCategory(id, dto);
+  }
+
+  @Delete('categories/:id')
+  @ApiOperation({
+    summary:
+      'Delete a category. Use ?force=true to detach it from exercises before deleting',
+  })
+  @ApiParam({ name: 'id', description: 'Category UUID' })
+  @ApiQuery({ name: 'force', required: false, type: Boolean })
+  async deleteCategory(
+    @Param('id') id: string,
+    @Query('force') force?: string,
+  ) {
+    return this.adminService.deleteCategory(id, force === 'true');
   }
 }
