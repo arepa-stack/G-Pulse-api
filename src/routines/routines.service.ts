@@ -133,10 +133,12 @@ export class RoutinesService {
     }
     await this.geminiService.incrementUsage(userId);
 
-    // Guardián: solo IDs que existen en la BD. Los inventados se descartan (nunca se guardan).
+    // Guardián: solo IDs que estaban en la lista de candidatos (y por tanto existen en la BD y
+    // cumplen los filtros). Los inventados o de otro grupo se descartan (nunca se guardan).
+    const candidateIds = new Set(candidatos.map((c) => c.id));
     const ids = (ai.ejercicios || []).map((e) => e.exercise_id);
     const valid = await this.prisma.exercise.findMany({
-      where: { id: { in: ids } },
+      where: { id: { in: ids.filter((id) => candidateIds.has(id)) } },
       select: {
         id: true,
         name: true,
@@ -168,6 +170,14 @@ export class RoutinesService {
         };
       });
     const descartados = ids.filter((id) => !validMap.has(id));
+
+    // Si la IA no devolvió ningún ID válido no hay rutina que mostrar ni guardar.
+    if (ejercicios.length === 0) {
+      return {
+        status: 'error',
+        mensaje: 'No pude armar la rutina esta vez. Intenta de nuevo.',
+      };
+    }
 
     return {
       status: 'ready',
