@@ -81,9 +81,28 @@ export class GeminiService {
     'upper legs', 'lower legs', 'waist', 'cardio', 'neck',
   ];
 
-  private structuredModel(schema: any) {
+  // 503 "high demand" / 429 de Google son transitorios: reintenta una vez y luego cae a un
+  // modelo de respaldo. ponytail: backoff fijo 1.5s; peor caso ~4 llamadas (< timeout Cloudflare 100s).
+  private async generateStructured(schema: any, prompt: string) {
+    const models = ['gemini-flash-lite-latest', 'gemini-flash-latest'];
+    let lastError: unknown;
+    for (const model of models) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          return await this.structuredModel(schema, model).generateContent(prompt);
+        } catch (e: any) {
+          lastError = e;
+          if (![429, 503].includes(e?.status)) throw e;
+          await new Promise((r) => setTimeout(r, 1500));
+        }
+      }
+    }
+    throw lastError;
+  }
+
+  private structuredModel(schema: any, model = 'gemini-flash-lite-latest') {
     return this.genAI.getGenerativeModel({
-      model: 'gemini-flash-lite-latest',
+      model,
       generationConfig: {
         responseMimeType: 'application/json',
         responseSchema: schema,
@@ -135,7 +154,7 @@ Si el mensaje no es sobre armar rutina de ejercicio, intent != "rutina".
 
 Mensaje del usuario: "${text}"`;
 
-    const result = await this.structuredModel(schema).generateContent(prompt);
+    const result = await this.generateStructured(schema, prompt);
     return JSON.parse(result.response.text());
   }
 
@@ -185,7 +204,7 @@ Respeta las restricciones (evita ejercicios que agraven la lesión). Si hay mati
 CANDIDATOS (elige de aquí):
 ${JSON.stringify(candidatos)}`;
 
-    const result = await this.structuredModel(schema).generateContent(prompt);
+    const result = await this.generateStructured(schema, prompt);
     return JSON.parse(result.response.text());
   }
 
