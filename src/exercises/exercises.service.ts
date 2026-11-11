@@ -49,11 +49,15 @@ export class ExercisesService {
     const { category, equipment, difficulty, take = 50 } = params;
 
     // difficulty acumulativa: 'advanced' incluye todo; 'intermediate' incluye beginner+intermediate.
+    // 'beginner' también incluye intermediate: el dataset etiquetó por EQUIPO, no por ejercicio
+    // (toda mancuerna/barra/cable/smith = intermediate, 0 beginner), así que solo 'beginner'
+    // dejaba a principiantes sin pesos libres. Se excluye solo 'advanced'; la IA generadora
+    // recibe difficulty y elige los simples. ponytail: reetiquetar el dataset y quitar esto.
     const idx = difficulty
       ? ExercisesService.LEVELS.indexOf(difficulty.toLowerCase())
       : -1;
     const allowedDifficulty =
-      idx >= 0 ? ExercisesService.LEVELS.slice(0, idx + 1) : undefined;
+      idx >= 0 ? ExercisesService.LEVELS.slice(0, Math.max(idx, 1) + 1) : undefined;
 
     const equipmentNorm = this.normalizeEquipment(equipment);
     const where: Prisma.ExerciseWhereInput = {

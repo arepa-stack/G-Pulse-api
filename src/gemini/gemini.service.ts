@@ -204,6 +204,8 @@ Perfil:
 - Restricciones/lesiones: ${profile.restricciones ?? 'ninguna'}
 
 Respeta las restricciones (evita ejercicios que agraven la lesión). Si hay matiz (ej. "parte superior"), prioriza por el nombre del ejercicio.
+Si el nivel es beginner: elige ejercicios simples y estables (máquinas, mancuernas básicas, peso corporal sencillo),
+evita técnicos o inestables (olímpicos, sobre balón, unilaterales complejos, pliometría) y usa volumen moderado.
 
 CANDIDATOS (elige de aquí):
 ${JSON.stringify(candidatos)}`;
