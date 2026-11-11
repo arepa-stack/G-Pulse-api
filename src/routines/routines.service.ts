@@ -57,18 +57,31 @@ export class RoutinesService {
       return { status: 'needs_input', faltan: [...new Set(faltan)], intent };
     }
 
-    let candidatosRaw = await this.exercisesService.findCandidates({
-      category: intent.category!,
-      equipment: intent.equipment ?? undefined,
-      difficulty: intent.difficulty ?? undefined,
-    });
+    // Full body: mezcla candidatos de los grupos principales (findCandidates filtra una sola categoría).
+    const categories =
+      intent.category!.toLowerCase() === 'full body'
+        ? ['chest', 'back', 'upper legs', 'shoulders', 'upper arms', 'waist']
+        : [intent.category!];
+    const take = categories.length > 1 ? 8 : undefined;
+    const findAll = async (equipment?: string) =>
+      (
+        await Promise.all(
+          categories.map((category) =>
+            this.exercisesService.findCandidates({
+              category,
+              equipment,
+              difficulty: intent.difficulty ?? undefined,
+              take,
+            }),
+          ),
+        )
+      ).flat();
+
+    let candidatosRaw = await findAll(intent.equipment ?? undefined);
 
     // Fallback: si el equipo específico no dio candidatos, reintenta sin filtrar por equipo.
     if (candidatosRaw.length === 0 && intent.equipment) {
-      candidatosRaw = await this.exercisesService.findCandidates({
-        category: intent.category!,
-        difficulty: intent.difficulty ?? undefined,
-      });
+      candidatosRaw = await findAll();
     }
 
     if (candidatosRaw.length === 0) {

@@ -39,12 +39,12 @@ export class MailService {
   async sendPasswordReset(
     email: string,
     name: string,
-    resetLink: string,
+    code: string,
   ): Promise<void> {
     await this.send({
       to: email,
       subject: `Restablece tu contraseña en ${this.appName}`,
-      html: passwordResetTemplate(name || 'Usuario', resetLink, this.appName),
+      html: passwordResetTemplate(name || 'Usuario', code, this.appName),
     });
   }
 

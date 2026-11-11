@@ -114,7 +114,7 @@ export class GeminiService {
       type: SchemaType.OBJECT,
       properties: {
         intent: { type: SchemaType.STRING, format: 'enum', enum: ['rutina', 'nutricion', 'otro'] },
-        category: { type: SchemaType.STRING, nullable: true, description: 'Una de: ' + GeminiService.CATEGORIES.join(', ') },
+        category: { type: SchemaType.STRING, nullable: true, description: 'Una de: ' + GeminiService.CATEGORIES.join(', ') + ', full body' },
         difficulty: { type: SchemaType.STRING, format: 'enum', nullable: true, enum: ['beginner', 'intermediate', 'advanced'] },
         equipment: { type: SchemaType.STRING, nullable: true, description: 'ej: dumbbell, barbell, cable, body weight, machine' },
         num_ejercicios: { type: SchemaType.INTEGER, nullable: true },
@@ -127,6 +127,7 @@ export class GeminiService {
 
     const prompt = `Eres un extractor de intención para una app de gym. Analiza el mensaje y devuelve los parámetros.
 Categorías válidas (usa el término en inglés): ${GeminiService.CATEGORIES.join(', ')}.
+Si pide "todo el cuerpo", "cuerpo completo" o "full body", pon category="full body".
 equipment y difficulty en inglés.
 Si el usuario menciona "gimnasio", "gym", "gimnasio completo" o "todo el equipo", pon equipment="gym" (acceso a todo) y NO lo agregues a "faltan".
 Solo agrega "equipment" a "faltan" si el usuario NO dio ninguna pista de equipo.

@@ -1,6 +1,6 @@
 export function passwordResetTemplate(
   name: string,
-  resetLink: string,
+  code: string,
   appName: string,
 ): string {
   return `<!DOCTYPE html>
@@ -28,24 +28,11 @@ export function passwordResetTemplate(
               <p style="margin:0 0 16px;color:#374151;font-size:15px;line-height:1.6;">
                 Hola, <strong>${name}</strong>. Recibimos una solicitud para restablecer la contraseña de tu cuenta.
               </p>
-              <p style="margin:0 0 28px;color:#374151;font-size:15px;line-height:1.6;">
-                Haz clic en el botón de abajo para crear una nueva contraseña. El enlace expirará en 1 hora.
+              <p style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.6;">
+                Ingresa este código en la app para crear una nueva contraseña. Expira en 15 minutos.
               </p>
-              <!-- Button -->
-              <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
-                <tr>
-                  <td style="background:#111827;border-radius:8px;padding:14px 28px;">
-                    <a href="${resetLink}" style="color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;">
-                      Restablecer contraseña
-                    </a>
-                  </td>
-                </tr>
-              </table>
-              <p style="margin:0 0 8px;color:#6b7280;font-size:13px;line-height:1.6;">
-                Si el botón no funciona, copia y pega este enlace en tu navegador:
-              </p>
-              <p style="margin:0 0 24px;word-break:break-all;">
-                <a href="${resetLink}" style="color:#2563eb;font-size:13px;">${resetLink}</a>
+              <p style="margin:0 0 28px;text-align:center;font-size:32px;font-weight:700;letter-spacing:8px;color:#111827;">
+                ${code}
               </p>
               <p style="margin:0;color:#6b7280;font-size:13px;line-height:1.6;">
                 Si no solicitaste restablecer tu contraseña, ignora este correo. Tu contraseña no cambiará.
